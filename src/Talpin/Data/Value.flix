@@ -1,0 +1,38 @@
+mod Talpin.Data {
+
+pub enum Value {
+    case U
+    case Ref(RefLoc)
+    case Closure(Id, Exp, Unit -> Env)
+}
+
+instance ToString[Value] {
+    pub def toString(v: Value): String = Value.toString(v)
+}
+
+
+mod Value {
+    use Talpin.Data.Id
+    use Talpin.Data.Exp
+    use Talpin.Data.Env
+    use Talpin.Data.RefLoc
+
+    pub def getClosure(v: Value): (Id, Exp, Env) \ Abort = match v {
+        case Closure(x, e, env) => (x, e, env())
+        case other => Abort.abort("'${other}' is not a closure.")
+    }
+
+    pub def getRef(v: Value): RefLoc \ Abort = match v {
+        case Ref(l) => l
+        case other => Abort.abort("'${other}' is not a ref.")
+    }
+
+    pub def toString(v: Value): String = match v {
+        case U => "u"
+        case Ref(loc) => "loc_${loc}"
+        case Closure(x, e, _env) => "<${x}, ${e}, _>"
+    }
+
+}
+
+}
