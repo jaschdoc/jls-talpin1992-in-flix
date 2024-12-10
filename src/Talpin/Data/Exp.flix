@@ -32,6 +32,28 @@ instance ToString[Exp] {
 
 mod Exp {
 
+    pub def expansive(exp: Exp): Bool = match exp {
+        case Rec(_, _, _) => false
+        case Var(_) => false
+        case Abs(_, _) => false
+
+        case New(_) => true
+        case Get(_) => true
+        case Set(_, _) => true
+        case App(_, _) => true
+
+        case Let(_, e, e1) => expansive(e) or expansive(e1)
+
+        case BoolCst(_) => false
+        case IntCst(_) => false
+
+        case If(_, _, _) => true
+        case Add(_, _) => true
+        case Sub(_, _) => true
+        case Eq(_, _) => true
+    }
+
+
     pub def toString(exp: Exp): String = match exp {
         case Var(x) => "${x}"
         case App(e, e1) => "(${e} ${e1})"
