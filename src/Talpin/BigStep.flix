@@ -9,15 +9,17 @@ mod Talpin.BigStep {
     use Talpin.Data.Value
     use Talpin.Data.Store.{newLoc, remove, store}
     use Talpin.Data.RuntimeEffect.{Init, Read, Write}
-    use Talpin.Data.Value.{Closure, Ref, U}
+    use Talpin.Data.Value.{Closure, Ref, U, BoolVal, IntVal}
 
     pub def eval(s: Store, env: Env, exp: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = match exp {
         case Exp.Var(x) =>
             (env[x], Trace.empty(), s)
         case Exp.Abs(x, e) =>
-            (Closure(x, e, () -> unbind(x, env)), Trace.empty(), s)
+            let env1 = unbind(x, env);
+            (Closure(x, e, () -> env1), Trace.empty(), s)
         case Exp.Rec(f, x, e) =>
-            def c() = Closure(x, e, () -> env |> unbind(f) |> unbind(x) |> bind(f, c()));
+            let env1 = env |> unbind(f) |> unbind(x);
+            def c() = Closure(x, e, () -> env1 |> bind(f, c()));
             (c(), Trace.empty(), s)
         case Exp.App(e, e1) =>
             evalApp(s, env, e, e1)
@@ -29,6 +31,19 @@ mod Talpin.BigStep {
             evalGet(s, env, e)
         case Exp.Set(e, e1) =>
             evalSet(s, env, e, e1)
+
+        case Exp.BoolCst(b) =>
+            (BoolVal(b), Trace.empty(), s)
+        case Exp.If(e, e1, e2) =>
+            evalIf(s, env, e, e1, e2)
+        case Exp.IntCst(b) =>
+            (IntVal(b), Trace.empty(), s)
+        case Exp.Add(e, e1) =>
+            evalIntOp(s, env, e, e1, Add.add)
+        case Exp.Sub(e, e1) =>
+            evalIntOp(s, env, e, e1, Sub.sub)
+        case Exp.Eq(e, e1) =>
+            evalEq(s, env, e, e1)
     }
 
     def evalApp(s0: Store, env: Env, e: Exp, e1: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {
@@ -62,6 +77,37 @@ mod Talpin.BigStep {
         let l = Value.getRef(vTemp);
         let (v, f1, s1) = eval(s, env, e1);
         (U, (f + f1) |> insert(Write(l)), s1 |> remove(l) |> store(l, v))
+    }
+
+    def evalIf(s0: Store, env: Env, e: Exp, e1: Exp, e2: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {
+        let (vTemp, f, s) = eval(s0, env, e);
+        match Value.getBool(vTemp) {
+            case true =>
+                let (v, f1, s1) = eval(s, env, e1);
+                (v, f + f1, s1)
+            case false =>
+                let (v, f1, s1) = eval(s, env, e2);
+                (v, f + f1, s1)
+        }
+    }
+
+    def evalIntOp(s0: Store, env: Env, e: Exp, e1: Exp, op: (Int32, Int32) -> Int32): (Value, Trace, Store) \ {Abort, KeyNotFound} = {
+        let (vTemp, f, s) = eval(s0, env, e);
+        let v = Value.getInt(vTemp);
+        let (v1Temp, f1, s1) = eval(s, env, e1);
+        let v1 = Value.getInt(v1Temp);
+        (IntVal(op(v, v1)), f + f1, s1)
+    }
+
+    def evalEq(s0: Store, env: Env, e: Exp, e1: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {
+        let (v, f, s) = eval(s0, env, e);
+        let (v1, f1, s1) = eval(s, env, e1);
+        let resB = match (v, v1) {
+            case (IntVal(i1), IntVal(i2)) => i1 == i2
+            case (BoolVal(b1), BoolVal(b2)) => b1 == b2
+            case _ => Abort.abort("'${v}' and '${v1}' cannot be compared with eq")
+        };
+        (BoolVal(resB), f + f1, s1)
     }
 
 }

@@ -17,12 +17,18 @@ pub enum Exp {
     case Get(Exp)
     /// (set e e')
     case Set(Exp, Exp)
+
+    case BoolCst(Bool)
+    case If(Exp, Exp, Exp)
+    case IntCst(Int32)
+    case Add(Exp, Exp)
+    case Sub(Exp, Exp)
+    case Eq(Exp, Exp)
 }
 
 instance ToString[Exp] {
     pub def toString(e: Exp): String = Exp.toString(e)
 }
-
 
 mod Exp {
 
@@ -35,6 +41,13 @@ mod Exp {
         case New(e) => "(new ${e})"
         case Get(e) => "(get ${e})"
         case Set(e, e1) => "(set ${e} ${e1})"
+
+        case BoolCst(b) => "${b}"
+        case If(e, e1, e2) => "(if ${e} ${e1} ${e2})"
+        case IntCst(i) => "${i}"
+        case Add(e, e1) => "(add ${e} ${e1})"
+        case Sub(e, e1) => "(sub ${e} ${e1})"
+        case Eq(e, e1) => "(eq ${e} ${e1})"
     }
 
 }

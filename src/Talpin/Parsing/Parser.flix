@@ -15,11 +15,13 @@ mod Talpin.Parsing.Parser {
 
     def parseExp(sc: StringCursor[r]): Exp \ r + Abort = {
         whiteSpace(sc);
-        match peekChar(sc) {
-            case '(' => parseParenExp(sc)
-            case c if Char.isLetter(c) => parseVar(sc)
-            case _ => err("letter or '('", "parseExp", sc)
-        }
+        let c = peekChar(sc);
+        if (c == '(') parseParenExp(sc)
+        else if (eat("true", sc)) Exp.BoolCst(true)
+        else if (eat("false", sc)) Exp.BoolCst(false)
+        else if (Char.isDigit(c)) parseInt(sc)
+        else if (Char.isLetter(c)) parseVar(sc)
+        else err("expression or '('", "parseExp", sc)
     }
 
     /// ALWAYS CONSUMES
@@ -87,6 +89,40 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.Set(e, e1)
+        } else if (sc |> eat("if")) {
+            whiteSpace(sc);
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let e1 = parseExp(sc);
+            whiteSpace(sc);
+            let e2 = parseExp(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.If(e, e1, e2)
+        } else if (sc |> eat("add")) {
+            whiteSpace(sc);
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let e1 = parseExp(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Add(e, e1)
+        } else if (sc |> eat("sub")) {
+            whiteSpace(sc);
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let e1 = parseExp(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Sub(e, e1)
+        } else if (sc |> eat("eq")) {
+            whiteSpace(sc);
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let e1 = parseExp(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Eq(e, e1)
         } else {
             whiteSpace(sc);
             let e = parseExp(sc);
@@ -107,15 +143,28 @@ mod Talpin.Parsing.Parser {
     def parseVar(sc: StringCursor[r]): Exp \ r + Abort =
         Exp.Var(parseName(sc))
 
+    def parseInt(sc: StringCursor[r]): Exp \ r + Abort = {
+        def loop(i) = {
+            if (nthChar(i, sc) |> Char.isDigit) loop(i+1)
+            else i
+        };
+        let chars = loop(0);
+        if (chars == 0) err("digit", "parseInt", sc) else ();
+        match take(chars, sc) |> Int32.fromString {
+            case Some(i) => Exp.IntCst(i)
+            case None => ??? // unreachable
+        }
+    }
+
     /// ALWAYS CONSUMES
     def parseName(sc: StringCursor[r]): String \ r + Abort = {
         def loop(i) = {
             if (nthChar(i, sc) |> Char.isLetter) loop(i+1)
             else i
         };
-        let i = loop(0);
-        if (i == 0) err("letter", "parseName", sc)
-        else take(i, sc)
+        let chars = loop(0);
+        if (chars == 0) err("letter", "parseName", sc)
+        else take(chars, sc)
     }
 
     def whiteSpace(sc: StringCursor[r]): Unit \ r =
