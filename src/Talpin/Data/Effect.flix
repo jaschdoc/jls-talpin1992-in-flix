@@ -1,6 +1,6 @@
 mod Talpin.Data {
 
-pub enum Effect {
+pub enum Effect with Eq, Order {
     case Empty
     case Init(Reg)
     case Read(Reg)
@@ -13,7 +13,13 @@ instance ToString[Effect] {
     pub def toString(ef: Effect): String = Effect.toString(ef)
 }
 
+instance Add[Effect] {
+    pub def add(ef1: Effect, ef2: Effect): Effect = Effect.Union(ef1, ef2)
+}
+
 mod Effect {
+    use Functor.map
+    use Option.getWithDefault
 
     pub def toString(ef: Effect): String = match ef {
         case Empty => "Ø"
@@ -23,6 +29,9 @@ mod Effect {
         case Union(p, p1) => "${toString(p)} ∪ ${toString(p1)}"
         case Var(z) => "e_${z}"
     }
+
+    pub def union(l: List[Effect]): Effect =
+        l |> List.toNel |> map(Nel.reduceLeft(Union)) |> getWithDefault(Empty)
 
 }
 

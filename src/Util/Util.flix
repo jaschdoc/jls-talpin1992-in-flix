@@ -16,4 +16,12 @@ mod Util.Util {
 
     pub def runAll(f: Unit -> t \ ef): t \ ef - Abort - KeyNotFound + IO =
         (handleKeyNotFound >> handleAbort)(f)()
+
+    pub def init(f: Unit -> t \ ef, n: Int32): List[t] \ ef = {
+        def loop(count, acc) = {
+            if (count <= 0) List.reverse(acc)
+            else loop(count - 1, f() :: acc)
+        };
+        loop(n, Nil)
+    }
 }

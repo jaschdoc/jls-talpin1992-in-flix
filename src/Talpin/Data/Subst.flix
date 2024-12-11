@@ -15,10 +15,39 @@ mod Subst {
     pub def empty(): Subst =
         Subst(Map.empty(), Map.empty(), Map.empty())
 
+    pub def isEmpty(s: Subst): Bool = {
+        let Subst(t, r, e) = s;
+        Map.isEmpty(t) and Map.isEmpty(r) and Map.isEmpty(e)
+    }
+
+    pub def id(): Subst =
+        empty()
+
+    pub def compose(inner: {inner = Subst}, outer: Subst): Subst = {
+        if (isEmpty(inner#inner)) outer
+        else if (isEmpty(outer)) inner#inner
+        else {
+            let Subst(tInner, rInner, eInner) = inner#inner;
+            let tMap = tInner |> Map.map(appType(outer));
+            let rMap = rInner |> Map.map(appReg(outer));
+            let eMap = eInner |> Map.map(appEffect(outer));
+
+            let Subst(tOuter, rOuter, eOuter) = inner#inner;
+            // Note that Map.union is left-biased.
+            let tMap1 = Map.union(tMap, tOuter);
+            let rMap1 = Map.union(rMap, rOuter);
+            let eMap1 = Map.union(eMap, eOuter);
+            Subst(tMap1, rMap1, eMap1)
+        }
+    }
+
     pub def bindTVar(x: String, t: Type, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap |> Map.insert(x, t), rMap, eMap)
     }
+
+    pub def bindTVarAll(l: List[(String, Type)], subst: Subst): Subst =
+        (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindTVar(x, t, acc))
 
     pub def unbindTVar(x: String, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
@@ -40,6 +69,9 @@ mod Subst {
         Subst(tMap, rMap |> Map.insert(x, p), eMap)
     }
 
+    pub def bindRVarAll(l: List[(String, Reg)], subst: Subst): Subst =
+        (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindRVar(x, t, acc))
+
     pub def unbindRVar(x: String, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap |> Map.remove(x), eMap)
@@ -59,6 +91,9 @@ mod Subst {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap, eMap |> Map.insert(x, ef))
     }
+
+    pub def bindEVarAll(l: List[(String, Effect)], subst: Subst): Subst =
+        (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindEVar(x, t, acc))
 
     pub def unbindEVar(x: String, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
@@ -92,7 +127,7 @@ mod Subst {
         case Effect.Init(p) => Effect.Init(appReg(subst, p))
         case Effect.Read(p) => Effect.Read(appReg(subst, p))
         case Effect.Write(p) => Effect.Write(appReg(subst, p))
-        case Effect.Union(ef, ef1) => Effect.Union(appEffect(subst, ef), appEffect(subst, ef1))
+        case Effect.Union(ef, ef1) => appEffect(subst, ef) + appEffect(subst, ef1)
         case Effect.Var(x) => appEVarOpt(subst, x) |> getWithDefault(effect)
     }
 
@@ -106,8 +141,18 @@ mod Subst {
         rVars |> Set.forEach(x -> acc |> Ref.transform(unbindRVar(x)));
         eVars |> Set.forEach(x -> acc |> Ref.transform(unbindEVar(x)));
         let t1 = appType(Ref.get(acc), t);
-        let k1 = ?appConstraint(Ref.get(acc), k);
+        let k1 = appConstraint(Ref.get(acc), k);
         {tpe = t1, k = k1 | scheme}
+    }
+
+    pub def appConstraint(subst: Subst, k: Constraint): Constraint = {
+        k |> coerce |> Set.map(match (x, ef) -> {
+            match appEVarOpt(subst)(x) {
+                case None => (x, appEffect(subst)(ef))
+                case Some(Effect.Var(x1)) => (x1, appEffect(subst)(ef))
+                case Some(other) => bug!(other |> ToString.toString) // paper says it should only be inferred variables, so unreachable
+            }
+        }) |> Constraint.Constraint
     }
 
 }
