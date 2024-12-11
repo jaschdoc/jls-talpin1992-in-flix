@@ -9,6 +9,8 @@ mod TyEnv {
     use Talpin.Data.Type
     use Talpin.Data.FreeVarSet
 
+    use Coerce.coerce
+
     pub def map(f: TyScheme -> TyScheme \ ef, env: TyEnv): TyEnv \ ef =
         Map.map(f, env)
 
@@ -17,7 +19,7 @@ mod TyEnv {
     }
 
     pub def bind(x: Id, fv: FreeVarSet, t: Type, k: Constraint, env: TyEnv): TyEnv = {
-        let FreeVarSet.FreeVarSet(tVars, rVars, eVars) = fv;
+        let {tVars, rVars, eVars} = coerce(fv);
         Map.insert(x, {tVars = tVars, rVars = rVars, eVars = eVars, tpe = t, k = k}, env)
     }
 

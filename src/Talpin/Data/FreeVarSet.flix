@@ -13,10 +13,22 @@ instance Sub[FreeVarSet] {
     pub def sub(fv: FreeVarSet, fv1: FreeVarSet): FreeVarSet = FreeVarSet.difference(fv, fv1)
 }
 
+instance Coerce[FreeVarSet] {
+    type Out = {tVars = Set[String], rVars = Set[String], eVars = Set[String]}
+
+    pub def coerce(fv: FreeVarSet): {tVars = Set[String], rVars = Set[String], eVars = Set[String]} = FreeVarSet.coerce(fv)
+}
+
+
 mod FreeVarSet {
 
     pub def empty(): FreeVarSet =
         Empty
+
+    pub def coerce(fv: FreeVarSet): {tVars = Set[String], rVars = Set[String], eVars = Set[String]} = match fv {
+        case Sets(t, r, e) => {tVars = t, rVars = r, eVars = e}
+        case Empty => {tVars = Set.empty(), rVars = Set.empty(), eVars = Set.empty()}
+    }
 
     pub def singleTVar(x: String): FreeVarSet =
         Sets(Set#{x}, Set.empty(), Set.empty())
