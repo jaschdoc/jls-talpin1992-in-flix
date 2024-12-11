@@ -1,16 +1,16 @@
 mod Talpin.Reconstruction {
-    use Talpin.Data.TyEnv
-    use Talpin.Data.Exp
-    use Talpin.Data.Subst
-    use Talpin.Data.Subst.{appEffect, appEVarOpt, appConstraint, appReg, appType, appTyEnv, bindTVarAll, bindRVarAll, bindEVarAll, compose}
-    use Talpin.Data.Type
-    use Talpin.Data.Effect
     use Talpin.Data.Constraint
     use Talpin.Data.Constraint.constraint
-    use Talpin.Data.Reg
-    use Util.Util.init
+    use Talpin.Data.Effect
+    use Talpin.Data.Exp
     use Talpin.Data.Exp.expansive
     use Talpin.Data.FreeVarSet
+    use Talpin.Data.Reg
+    use Talpin.Data.Subst
+    use Talpin.Data.Subst.{appEffect, appEVarOpt, appConstraint, appReg, appType, appTyEnv, bindTVarAll, bindRVarAll, bindEVarAll, compose}
+    use Talpin.Data.TyEnv
+    use Talpin.Data.Type
+    use Util.Util.init
 
     use Functor.map
     use Foldable.toList
@@ -76,7 +76,7 @@ mod Talpin.Reconstruction {
         // typo in paper, x here is written as n twice
         let tEnv1 = tEnv |> TyEnv.unbind(f) |> TyEnv.unbind(x) |> TyEnv.bindType(f, Type.Arrow(a, z, a1)) |> TyEnv.bindType(x, a);
         let (s, t, ef, k) = recon(tEnv1, e);
-        let s1 = ?unify(appType(s)(a1), t);
+        let s1 = unify(appType(s)(a1), t);
         let comp = compose(inner = s, s1);
         let zSubst = match appEVarOpt(s, zName) {
             case None => zName
