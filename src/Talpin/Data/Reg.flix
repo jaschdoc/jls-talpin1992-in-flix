@@ -11,10 +11,16 @@ instance ToString[Reg] {
 }
 
 mod Reg {
+    use Talpin.Data.FreeVarSet
 
     pub def toString(p: Reg): String = match p {
         case RegConst(i) => "r_${i}"
         case RegVar(x) => "r_${x}"
+    }
+
+    pub def fv(p: Reg): FreeVarSet = match p {
+        case RegConst(_) => FreeVarSet.empty()
+        case RegVar(x) => FreeVarSet.singleRVar(x)
     }
 
 }

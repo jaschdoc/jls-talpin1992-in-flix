@@ -5,6 +5,9 @@ pub enum Type {
     case Var(String)
     case Ref(Reg, Type)
     case Arrow(Type, Effect, Type)
+
+    case Bool
+    case Int
 }
 
 instance ToString[Type] {
@@ -13,13 +16,28 @@ instance ToString[Type] {
 
 mod Type {
     use Talpin.Data.Effect
+    use Talpin.Data.FreeVarSet
+    use Talpin.Data.Reg
 
     pub def toString(tpe: Type): String = match tpe {
         case Unitt => "unit"
-        case Var(s) => "t_${s}"
+        case Var(x) => "t_${x}"
         case Ref(p, t) => "ref_${p}(${toString(t)})"
         case Arrow(t, Effect.Empty, t1) => "${toString(t)} -> ${toString(t1)}"
         case Arrow(t, ef, t1) => "${toString(t)} ->[${ef}] ${toString(t1)}"
+
+        case Bool => "bool"
+        case Int => "int"
+    }
+
+    pub def fv(tpe: Type): FreeVarSet = match tpe {
+        case Unitt => FreeVarSet.empty()
+        case Var(x) => FreeVarSet.singleTVar(x)
+        case Ref(p, t) => Reg.fv(p) + fv(t)
+        case Arrow(t, ef, t1) => fv(t) + Effect.fv(ef) + fv(t1)
+
+        case Bool => FreeVarSet.empty()
+        case Int => FreeVarSet.empty()
     }
 
 }

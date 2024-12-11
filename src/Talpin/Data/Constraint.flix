@@ -16,6 +16,7 @@ instance Add[Constraint] {
 
 mod Constraint {
     use Talpin.Data.Effect
+    use Talpin.Data.FreeVarSet
 
     pub def empty(): Constraint =
         Constraint(Set.empty())
@@ -30,6 +31,8 @@ mod Constraint {
 
     pub def combine(k1: Constraint, k2: Constraint): Constraint =
         Set.union(coerce(k1), coerce(k2)) |> Constraint
+
+    pub def fv(k: Constraint): FreeVarSet = ???
 
 }
 

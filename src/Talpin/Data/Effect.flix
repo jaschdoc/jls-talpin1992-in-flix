@@ -18,6 +18,9 @@ instance Add[Effect] {
 }
 
 mod Effect {
+    use Talpin.Data.FreeVarSet
+    use Talpin.Data.Reg
+
     use Functor.map
     use Option.getWithDefault
 
@@ -32,6 +35,15 @@ mod Effect {
 
     pub def union(l: List[Effect]): Effect =
         l |> List.toNel |> map(Nel.reduceLeft(Union)) |> getWithDefault(Empty)
+
+    pub def fv(effect: Effect): FreeVarSet = match effect {
+        case Empty => FreeVarSet.empty()
+        case Init(p) => Reg.fv(p)
+        case Read(p) => Reg.fv(p)
+        case Write(p) => Reg.fv(p)
+        case Union(ef, ef1) => fv(ef) + fv(ef1)
+        case Var(x) => FreeVarSet.singleEVar(x)
+    }
 
 }
 

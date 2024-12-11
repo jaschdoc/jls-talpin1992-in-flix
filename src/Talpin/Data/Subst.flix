@@ -20,9 +20,19 @@ mod Subst {
         Map.isEmpty(t) and Map.isEmpty(r) and Map.isEmpty(e)
     }
 
+    pub def singleTVar(x: String, t: Type): Subst =
+        empty() |> bindTVar(x, t)
+
+    pub def singleRVar(x: String, t: Reg): Subst =
+        empty() |> bindRVar(x, t)
+
+    pub def singleEVar(x: String, t: Effect): Subst =
+        empty() |> bindEVar(x, t)
+
     pub def id(): Subst =
         empty()
 
+    // TODO: swap order
     pub def compose(inner: {inner = Subst}, outer: Subst): Subst = {
         if (isEmpty(inner#inner)) outer
         else if (isEmpty(outer)) inner#inner
@@ -115,6 +125,9 @@ mod Subst {
         case Type.Var(x) => appTVarOpt(subst, x) |> getWithDefault(tpe)
         case Type.Ref(p, t) => Type.Ref(appReg(subst, p), appType(subst, t))
         case Type.Arrow(t, ef, t1) => Type.Arrow(appType(subst, t), appEffect(subst, ef), appType(subst, t1))
+
+        case Type.Bool => Type.Bool
+        case Type.Int => Type.Int
     }
 
     pub def appReg(subst: Subst, p: Reg): Reg = match p {
