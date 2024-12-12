@@ -11,6 +11,9 @@ mod TyEnv {
 
     use Coerce.coerce
 
+    pub def empty(): TyEnv =
+        Map.empty()
+
     pub def map(f: TyScheme -> TyScheme \ ef, env: TyEnv): TyEnv \ ef =
         Map.map(f, env)
 
@@ -26,7 +29,8 @@ mod TyEnv {
     pub def unbind(x: Id, env: TyEnv): TyEnv =
         Map.remove(x, env)
 
-    pub def fv(env: TyEnv): FreeVarSet = ???
+    pub def fv(env: TyEnv): FreeVarSet =
+        (FreeVarSet.empty(), env) ||> Map.foldLeft(acc -> s -> acc + TyScheme.fv(s))
 
 }
 

@@ -56,7 +56,8 @@ mod Talpin.BigStep {
 
     def evalLet(s0: Store, env: Env, x: Id, e: Exp, e1: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {
         let (v, f, s) = eval(s0, env, e);
-        let (v1, f1, s1) = eval(s, env |> unbind(x) |> bind(x, v), e1);
+        let env1 = if (x == "_") env else env |> unbind(x) |> bind(x, v);
+        let (v1, f1, s1) = eval(s, env1, e1);
         (v1, f + f1, s1)
     }
 

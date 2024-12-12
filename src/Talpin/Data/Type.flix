@@ -40,6 +40,16 @@ mod Type {
         case Int => FreeVarSet.empty()
     }
 
+    pub def simplify(tpe: Type): Type = match tpe {
+        case Unitt => Unitt
+        case Var(_) => tpe
+        case Ref(p, t) => Ref(p, simplify(t))
+        case Arrow(t, ef, t1) => Arrow(simplify(t), Effect.simplify(ef), simplify(t1))
+
+        case Bool => Bool
+        case Int => Int
+    }
+
 }
 
 }

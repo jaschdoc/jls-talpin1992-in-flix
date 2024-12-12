@@ -67,9 +67,9 @@ mod Exp {
         case BoolCst(b) => "${b}"
         case If(e, e1, e2) => "(if ${e} ${e1} ${e2})"
         case IntCst(i) => "${i}"
-        case Add(e, e1) => "(add ${e} ${e1})"
-        case Sub(e, e1) => "(sub ${e} ${e1})"
-        case Eq(e, e1) => "(eq ${e} ${e1})"
+        case Add(e, e1) => "(+ ${e} ${e1})"
+        case Sub(e, e1) => "(- ${e} ${e1})"
+        case Eq(e, e1) => "(== ${e} ${e1})"
     }
 
 }

@@ -11,6 +11,7 @@ pub type alias TyScheme = {
 mod TyScheme {
     use Talpin.Data.Type
     use Talpin.Data.Constraint
+    use Talpin.Data.FreeVarSet
 
     pub def fromType(t: Type): TyScheme = {
         tVars = Set.empty(),
@@ -19,6 +20,8 @@ mod TyScheme {
         tpe = t,
         k = Constraint.empty()
     }
+
+    pub def fv(s: TyScheme): FreeVarSet = ???
 
 }
 

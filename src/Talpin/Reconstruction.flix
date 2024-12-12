@@ -10,17 +10,19 @@ mod Talpin.Reconstruction {
     use Talpin.Data.Subst.{appEffect, appEVarOpt, appConstraint, appReg, appType, appTyEnv, bindTVarAll, bindRVarAll, bindEVarAll, compose}
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
+    use Talpin.FreshName
     use Util.Util.init
 
     use Functor.map
     use Foldable.toList
     use ToString.toString
 
-    pub eff FreshName {
-        def get(): String
+    pub def reconstruct(exp: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {
+        let (s, t, ef, k) = recon(TyEnv.empty(), exp);
+        (s, Type.simplify(t), Effect.simplify(ef), Constraint.simplify(k))
     }
 
-    pub def recon(tEnv: TyEnv, exp: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = match exp {
+    def recon(tEnv: TyEnv, exp: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = match exp {
         case Exp.Var(x) => reconVar(tEnv, x)
         case Exp.Let(x, e, e1) => reconLet(tEnv, x, e, e1)
         case Exp.Abs(x, e) => reconAbs(tEnv, x, e)
@@ -50,11 +52,11 @@ mod Talpin.Reconstruction {
         let (s, t, ef, k) = recon(tEnv, e);
         if (not expansive(e) and false) {
             let vs = Type.fv(t) + Constraint.fv(k) - TyEnv.fv(tEnv);
-            let tEnv1 = appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bind(x, vs, t, k);
+            let tEnv1 = if (x == "_") appTyEnv(s)(tEnv) else appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bind(x, vs, t, k);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
             (compose(inner = s, s1), t1, ef1, k1)
         } else {
-            let tEnv1 = appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bindType(x, t);
+            let tEnv1 = if (x == "_") appTyEnv(s)(tEnv) else appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bindType(x, t);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
             (compose(inner = s, s1), t1, appEffect(s1)(ef) + ef1, appConstraint(s1)(k) + k1)
         }

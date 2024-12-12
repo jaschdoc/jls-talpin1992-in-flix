@@ -5,7 +5,7 @@ mod Util.Util {
         x -> run f(x) with Abort {
             def abort(m, _k) = {
                 System.err.println(m);
-                ???
+                ?abortCrash
             }
         }
 
@@ -15,7 +15,10 @@ mod Util.Util {
         }
 
     pub def runAll(f: Unit -> t \ ef): t \ ef - Abort - KeyNotFound + IO =
-        (handleKeyNotFound >> handleAbort)(f)()
+        handleAll(f)()
+
+    pub def handleAll(f: a -> b \ ef): a -> b \ ef - Abort - KeyNotFound + IO =
+        (handleKeyNotFound >> handleAbort)(f)
 
     pub def init(f: Unit -> t \ ef, n: Int32): List[t] \ ef = {
         def loop(count, acc) = {

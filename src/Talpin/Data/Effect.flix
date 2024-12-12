@@ -33,8 +33,10 @@ mod Effect {
         case Var(z) => "e_${z}"
     }
 
-    pub def union(l: List[Effect]): Effect =
-        l |> List.toNel |> map(Nel.reduceLeft(Union)) |> getWithDefault(Empty)
+    pub def union(l: i): Effect \ Iterable.Aef[i] with Iterable[i] where Iterable.Elm[i] ~ Effect = region local {
+        // TODO: don't materialize
+        l |> Iterable.iterator(local) |> Iterator.toList |> List.toNel |> map(Nel.reduceLeft(Union)) |> getWithDefault(Empty)
+    }
 
     pub def fv(effect: Effect): FreeVarSet = match effect {
         case Empty => FreeVarSet.empty()
@@ -43,6 +45,30 @@ mod Effect {
         case Write(p) => Reg.fv(p)
         case Union(ef, ef1) => fv(ef) + fv(ef1)
         case Var(x) => FreeVarSet.singleEVar(x)
+    }
+
+    pub def simplify(effect: Effect): Effect = region local {
+        let workList = MutQueue.empty(local);
+        MutQueue.enqueue(workList, effect);
+
+        let seen = MutSet.empty(local);
+        def loop() = match MutQueue.dequeue(workList) {
+            case Some(ef) =>
+                match ef {
+                    case Empty => ()
+                    case Init(_) => seen |> MutSet.add(ef)
+                    case Read(_) => seen |> MutSet.add(ef)
+                    case Write(_) => seen |> MutSet.add(ef)
+                    case Union(e, e1) =>
+                        MutQueue.enqueue(workList, e);
+                        MutQueue.enqueue(workList, e1)
+                    case Var(_) => seen |> MutSet.add(ef)
+                };
+                loop()
+            case None => ()
+        };
+        loop();
+        union(seen)
     }
 
 }

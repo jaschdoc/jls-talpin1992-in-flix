@@ -89,6 +89,14 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.Set(e, e1)
+        } else if (sc |> eat("begin")) {
+            whiteSpace(sc);
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let e1 = parseExp(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Let("_", e, e1)
         } else if (sc |> eat("if")) {
             whiteSpace(sc);
             let e = parseExp(sc);
@@ -99,7 +107,7 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.If(e, e1, e2)
-        } else if (sc |> eat("add")) {
+        } else if (sc |> eat("+")) {
             whiteSpace(sc);
             let e = parseExp(sc);
             whiteSpace(sc);
@@ -107,7 +115,7 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.Add(e, e1)
-        } else if (sc |> eat("sub")) {
+        } else if (sc |> eat("-")) {
             whiteSpace(sc);
             let e = parseExp(sc);
             whiteSpace(sc);
@@ -115,7 +123,7 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.Sub(e, e1)
-        } else if (sc |> eat("eq")) {
+        } else if (sc |> eat("==")) {
             whiteSpace(sc);
             let e = parseExp(sc);
             whiteSpace(sc);
@@ -152,7 +160,7 @@ mod Talpin.Parsing.Parser {
         if (chars == 0) err("digit", "parseInt", sc) else ();
         match take(chars, sc) |> Int32.fromString {
             case Some(i) => Exp.IntCst(i)
-            case None => ??? // unreachable
+            case None => ?unreachable // unreachable
         }
     }
 
