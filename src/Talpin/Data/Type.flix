@@ -28,8 +28,8 @@ mod Type {
         case Arrow(Arrow(it, ief, it1), ef, t1) => "(${toString(Arrow(it, ief, it1))}) ->[${ef}] ${toString(t1)}"
         case Arrow(t, ef, t1) => "${toString(t)} ->[${ef}] ${toString(t1)}"
 
-        case Bool => "bool"
-        case Int => "int"
+        case Bool => "boolean"
+        case Int => "integer"
     }
 
     pub def fv(tpe: Type): FreeVarSet = match tpe {

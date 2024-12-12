@@ -9,6 +9,7 @@ mod Talpin.Examples {
     use Talpin.Data.Effect
     use Talpin.Data.Constraint
     use Talpin.FreshName
+    use Talpin.EffectSolver
     use Talpin.BigStep.eval
     use Talpin.Parsing.Parser.parse
     use Talpin.Reconstruction.reconstruct
@@ -53,9 +54,9 @@ mod Talpin.Examples {
         eval(Store.empty(), Env.empty(), exp03())
     })
 
-    pub def inferExp03(): (Type, Effect, Constraint) \ IO = FreshName.runWithState(handleAll(() -> {
-        let (_, t, ef, k) = reconstruct(exp03());
-        (t, ef, k)
+    pub def inferExp03(): (Type, Effect) \ IO = FreshName.runWithState(handleAll(() -> {
+        let (_, t, ef) = reconstruct(exp03()) |> EffectSolver.solvFull;
+        (t, ef)
     }))
 
 }
