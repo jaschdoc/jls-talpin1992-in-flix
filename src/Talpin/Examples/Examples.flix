@@ -53,7 +53,7 @@ mod Talpin.Examples {
         eval(Store.empty(), Env.empty(), exp03())
     })
 
-    pub def inferExp03(): (Type, Effect, Constraint) \ IO = FreshName.runWithState("x$", handleAll(() -> {
+    pub def inferExp03(): (Type, Effect, Constraint) \ IO = FreshName.runWithState(handleAll(() -> {
         let (_, t, ef, k) = reconstruct(exp03());
         (t, ef, k)
     }))

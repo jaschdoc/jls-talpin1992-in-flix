@@ -25,7 +25,7 @@ mod Talpin.Repl {
     def typeInput(input: String): Unit \ IO = {
         run {
             let p = Parser.parse(input);
-            let (s, t, ef, k) = FreshName.runWithState("x$")(() -> Reconstruction.reconstruct(p));
+            let (s, t, ef, k) = FreshName.runWithState(() -> Reconstruction.reconstruct(p));
             println("       Type: ${t}");
             println("     Effect: ${ef}");
             println("Constraints: ${k}");

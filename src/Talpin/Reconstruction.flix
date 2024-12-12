@@ -65,7 +65,7 @@ mod Talpin.Reconstruction {
     def reconAbs(tEnv: TyEnv, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {
         let a = freshTVar();
         let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
-        let zName = FreshName.get();
+        let zName = "e${FreshName.get()}";
         let z = Effect.Var(zName);
         (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + constraint(upperBound = zName, ef))
     }
@@ -73,7 +73,7 @@ mod Talpin.Reconstruction {
     def reconRec(tEnv: TyEnv, f: String, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {
         let a = freshTVar();
         let a1 = freshTVar();
-        let zName = FreshName.get();
+        let zName = "e${FreshName.get()}";
         let z = Effect.Var(zName);
         // typo in paper, x here is written as n twice
         let tEnv1 = tEnv |> TyEnv.unbind(f) |> TyEnv.unbind(x) |> TyEnv.bindType(f, Type.Arrow(a, z, a1)) |> TyEnv.bindType(x, a);
@@ -179,10 +179,10 @@ mod Talpin.Reconstruction {
         case (t, t1) => Abort.abort("${t} !~ ${t1}")
     }
 
-    def freshTVar(): Type \ FreshName = Type.Var(FreshName.get())
+    def freshTVar(): Type \ FreshName = Type.Var("t${FreshName.get()}")
 
-    def freshRVar(): Reg \ FreshName = Reg.RegVar(FreshName.get())
+    def freshRVar(): Reg \ FreshName = Reg.RegVar("r${FreshName.get()}")
 
-    def freshEVar(): Effect \ FreshName = Effect.Var(FreshName.get())
+    def freshEVar(): Effect \ FreshName = Effect.Var("e${FreshName.get()}")
 
 }

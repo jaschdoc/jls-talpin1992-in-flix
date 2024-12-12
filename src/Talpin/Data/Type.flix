@@ -23,7 +23,9 @@ mod Type {
         case Unitt => "unit"
         case Var(x) => "${x}"
         case Ref(p, t) => "ref_${p}(${toString(t)})"
+        case Arrow(Arrow(it, ief, it1), Effect.Empty, t1) => "(${toString(Arrow(it, ief, it1))}) -> ${toString(t1)}"
         case Arrow(t, Effect.Empty, t1) => "${toString(t)} -> ${toString(t1)}"
+        case Arrow(Arrow(it, ief, it1), ef, t1) => "(${toString(Arrow(it, ief, it1))}) ->[${ef}] ${toString(t1)}"
         case Arrow(t, ef, t1) => "${toString(t)} ->[${ef}] ${toString(t1)}"
 
         case Bool => "bool"
