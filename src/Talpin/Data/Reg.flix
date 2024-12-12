@@ -14,8 +14,8 @@ mod Reg {
     use Talpin.Data.FreeVarSet
 
     pub def toString(p: Reg): String = match p {
-        case RegConst(i) => "r_${i}"
-        case RegVar(x) => "r_${x}"
+        case RegConst(i) => "cst#${i}"
+        case RegVar(x) => "${x}"
     }
 
     pub def fv(p: Reg): FreeVarSet = match p {

@@ -64,9 +64,9 @@ mod Talpin.Reconstruction {
 
     def reconAbs(tEnv: TyEnv, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {
         let a = freshTVar();
+        let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
         let zName = FreshName.get();
         let z = Effect.Var(zName);
-        let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
         (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + constraint(upperBound = zName, ef))
     }
 
@@ -140,10 +140,10 @@ mod Talpin.Reconstruction {
         let (s1, t1, ef1, k1) = recon(tEnv, e1);
         let s11 = unify(appType(s1)(t), Type.Int);
         let s111 = unify(appType(s11)(t1), Type.Int);
-        let comp = compose(inner = s11, s111);
-        let comp1 = compose(inner = s1, comp);
-        let ef11 = appEffect(comp1)(ef) + appEffect(comp)(ef1);
-        (compose(inner = s, comp1), Type.Int, ef11, appConstraint(comp1)(k) + appConstraint(comp)(k1))
+        let comp11And111 = compose(inner = s11, s111);
+        let comp1And11And111 = compose(inner = s1, comp11And111);
+        let ef11 = appEffect(comp1And11And111)(ef) + appEffect(comp11And111)(ef1);
+        (compose(inner = s, comp1And11And111), Type.Int, ef11, appConstraint(comp1And11And111)(k) + appConstraint(comp11And111)(k1))
     }
 
     def reconEq(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {

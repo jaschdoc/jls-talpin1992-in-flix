@@ -21,7 +21,7 @@ mod Type {
 
     pub def toString(tpe: Type): String = match tpe {
         case Unitt => "unit"
-        case Var(x) => "t_${x}"
+        case Var(x) => "${x}"
         case Ref(p, t) => "ref_${p}(${toString(t)})"
         case Arrow(t, Effect.Empty, t1) => "${toString(t)} -> ${toString(t1)}"
         case Arrow(t, ef, t1) => "${toString(t)} ->[${ef}] ${toString(t1)}"

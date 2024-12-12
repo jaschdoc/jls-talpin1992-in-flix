@@ -30,7 +30,7 @@ mod Effect {
         case Read(p) => "read(${p})"
         case Write(p) => "write(${p})"
         case Union(p, p1) => "${toString(p)} ∪ ${toString(p1)}"
-        case Var(z) => "e_${z}"
+        case Var(z) => "${z}"
     }
 
     pub def union(l: i): Effect \ Iterable.Aef[i] with Iterable[i] where Iterable.Elm[i] ~ Effect = region local {

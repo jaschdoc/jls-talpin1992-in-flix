@@ -2,6 +2,11 @@ mod Talpin.Data {
 
 pub enum Subst(Map[String, Type], Map[String, Reg], Map[String, Effect])
 
+instance ToString[Subst] {
+    pub def toString(subst: Subst): String = Subst.toString(subst)
+}
+
+
 mod Subst {
     use Option.getWithDefault
 
@@ -42,7 +47,7 @@ mod Subst {
             let rMap = rInner |> Map.map(appReg(outer));
             let eMap = eInner |> Map.map(appEffect(outer));
 
-            let Subst(tOuter, rOuter, eOuter) = inner#inner;
+            let Subst(tOuter, rOuter, eOuter) = outer;
             // Note that Map.union is left-biased.
             let tMap1 = Map.union(tMap, tOuter);
             let rMap1 = Map.union(rMap, rOuter);
@@ -166,6 +171,15 @@ mod Subst {
                 case Some(other) => bug!(other |> ToString.toString) // paper says it should only be inferred variables, so unreachable
             }
         }) |> Constraint.Constraint
+    }
+
+    pub def toString(subst: Subst): String = region local {
+        let Subst(ts, rs, efs) = subst;
+        let tIt = ts |> Map.iterator(local) |> Iterator.map(match (x, t) -> "  ${x} -> ${t}");
+        let rIt = rs |> Map.iterator(local) |> Iterator.map(match (x, r) -> "  ${x} -> ${r}");
+        let eIt = efs |> Map.iterator(local) |> Iterator.map(match (x, ef) -> "  ${x} -> ${ef}");
+        let inner = (tIt `Iterator.append` rIt `Iterator.append` eIt) |> Iterator.join(",\n");
+        "[\n${inner}\n]"
     }
 
 }

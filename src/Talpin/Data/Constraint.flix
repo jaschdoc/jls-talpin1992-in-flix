@@ -44,7 +44,7 @@ mod Constraint {
     }
 
     pub def toString(k: Constraint): String = {
-        let inner = k |> coerce |> Set.toList |> List.map(match (x, y) -> "e_${x} ⊒ ${y}") |> List.join(", ");
+        let inner = k |> coerce |> Set.toList |> List.map(match (x, y) -> "${x} ⊒ ${y}") |> List.join(", ");
         "{${inner}}"
     }
 
