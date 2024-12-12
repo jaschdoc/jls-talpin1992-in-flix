@@ -127,12 +127,12 @@ mod Talpin.Reconstruction {
         let s1 = unify(t, Type.Bool);
         let (s11, t1, ef1, k1) = recon(tEnv, e1);
         let (s111, t11, ef11, k11) = recon(tEnv, e11);
-        let s1111 = unify(appType(s1)(t1), appType(s1)(t11));
-        let comp = compose(inner = s1, s11);
-        let comp1 = compose(inner = s111, s1111);
-        let comp11 = compose(inner = comp, comp1);
-        let ef111 = appEffect(comp11)(ef) + appEffect(comp1)(ef1) + appEffect(s1111)(ef11);
-        (compose(inner = s, comp11), Type.Bool, ef111, appConstraint(comp11)(k) + appConstraint(comp1)(k1) + appConstraint(s1111)(k11))
+        let s1111 = unify(appType(s111)(t1), t11);
+        let comp1And11 = compose(inner = s1, s11);
+        let comp111And1111 = compose(inner = s111, s1111);
+        let comp1Through1111 = compose(inner = comp1And11, comp111And1111);
+        let ef111 = appEffect(comp1Through1111)(ef) + appEffect(comp111And1111)(ef1) + appEffect(s1111)(ef11);
+        (compose(inner = s, comp1Through1111), appType(s1111)(t11), ef111, appConstraint(comp1Through1111)(k) + appConstraint(comp111And1111)(k1) + appConstraint(s1111)(k11))
     }
 
     def reconIntOp(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {

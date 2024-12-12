@@ -3,7 +3,9 @@ mod Talpin.Repl {
     use Talpin.Reconstruction
     use Talpin.Data.Type
     use Talpin.Data.Constraint
+    use Talpin.Data.Subst
     use Talpin.FreshName
+    use Talpin.EffectSolver
     use Talpin.Data.Effect
 
     pub def main(): Unit \ IO = App.runAll(() -> {
@@ -26,10 +28,14 @@ mod Talpin.Repl {
         run {
             let p = Parser.parse(input);
             let (s, t, ef, k) = FreshName.runWithState(() -> Reconstruction.reconstruct(p));
-            println("       Type: ${t}");
-            println("     Effect: ${ef}");
+            let s1 = EffectSolver.solv(k);
+            println("-----------: ----------------------------------");
+            println("        Exp: ${p}");
+            println("       Type: ${Subst.appType(s1)(t)}");
+            println("     Effect: ${Subst.appEffect(s1)(ef)}");
             println("Constraints: ${k}");
-            println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}")
+            println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}");
+            println("  PostSubst: ${Subst.compose(inner = s, s1) |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}")
         } with Abort {
             def abort(msg, _k) = println("Err: ${msg}")
         } with KeyNotFound {
