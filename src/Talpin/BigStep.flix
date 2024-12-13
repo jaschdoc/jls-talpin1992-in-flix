@@ -8,7 +8,7 @@ mod Talpin.BigStep {
     use Talpin.Data.Trace.insert
     use Talpin.Data.Value
     use Talpin.Data.Store.{newLoc, remove, store}
-    use Talpin.Data.RuntimeEffect.{Init, Read, Write}
+    use Talpin.Data.RuntimeEffect.{Init, Read, Write, Eff}
     use Talpin.Data.Value.{Closure, Ref, U, BoolVal, IntVal}
 
     pub def eval(s: Store, env: Env, exp: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = match exp {
@@ -44,6 +44,9 @@ mod Talpin.BigStep {
             evalIntOp(s, env, e, e1, Sub.sub)
         case Exp.Eq(e, e1) =>
             evalEq(s, env, e, e1)
+
+        case Exp.Do(ef) =>
+            (U, Trace.singleton(Eff(ef)), s)
     }
 
     def evalApp(s0: Store, env: Env, e: Exp, e1: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {

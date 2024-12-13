@@ -147,6 +147,8 @@ mod Subst {
         case Effect.Write(p) => Effect.Write(appReg(subst, p))
         case Effect.Union(ef, ef1) => appEffect(subst, ef) + appEffect(subst, ef1)
         case Effect.Var(x) => appEVarOpt(subst, x) |> getWithDefault(effect)
+
+        case Effect.Eff(_) => effect
     }
 
     pub def appTyEnv(subst: Subst, env: TyEnv): TyEnv =

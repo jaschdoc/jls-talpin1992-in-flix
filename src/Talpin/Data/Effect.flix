@@ -7,6 +7,8 @@ pub enum Effect with Eq, Order {
     case Write(Reg)
     case Union(Effect, Effect)
     case Var(String)
+
+    case Eff(String)
 }
 
 instance ToString[Effect] {
@@ -24,13 +26,15 @@ mod Effect {
     use Functor.map
     use Option.getWithDefault
 
-    pub def toString(ef: Effect): String = match ef {
+    pub def toString(effect: Effect): String = match effect {
         case Empty => "Ø"
         case Init(p) => "init(${p})"
         case Read(p) => "read(${p})"
         case Write(p) => "write(${p})"
         case Union(p, p1) => "${toString(p)} ∪ ${toString(p1)}"
         case Var(z) => "${z}"
+
+        case Eff(ef) => ef
     }
 
     pub def union(l: i): Effect \ Iterable.Aef[i] with Iterable[i] where Iterable.Elm[i] ~ Effect = region local {
@@ -45,6 +49,8 @@ mod Effect {
         case Write(p) => Reg.fv(p)
         case Union(ef, ef1) => fv(ef) + fv(ef1)
         case Var(x) => FreeVarSet.singleEVar(x)
+
+        case Eff(_) => FreeVarSet.empty()
     }
 
     pub def simplify(effect: Effect): Effect = region local {
@@ -63,6 +69,8 @@ mod Effect {
                         MutQueue.enqueue(workList, e);
                         MutQueue.enqueue(workList, e1)
                     case Var(_) => seen |> MutSet.add(ef)
+
+                    case Eff(_) => seen |> MutSet.add(ef)
                 };
                 loop()
             case None => ()

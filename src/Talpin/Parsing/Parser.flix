@@ -7,6 +7,7 @@ mod Talpin.Parsing.Parser {
     use Util.StringCursor.eat
     use Util.StringCursor.take
     use Util.StringCursor.dropWhile
+    use Util.StringCursor.dropWhile!
 
     pub def parse(s: String): Exp \ Abort = region local {
         match String.stripPrefix(substr = "flix:", s) {
@@ -35,6 +36,7 @@ mod Talpin.Parsing.Parser {
     /// ALWAYS CONSUMES
     def parseParenExp(sc: StringCursor[r]): Exp \ r + Abort = {
         def ept(s) = expect(s, "parseParenExp", sc);
+        def ws!() = whiteSpace!("parseParenExp", sc);
         ept("(");
         whiteSpace(sc);
         if (sc |> eat("lambda")) {
@@ -78,19 +80,19 @@ mod Talpin.Parsing.Parser {
             ept(")");
             Exp.Let(x, e, e1)
         } else if (sc |> eat("new")) {
-            whiteSpace(sc);
+            ws!();
             let e = parseExp(sc);
             whiteSpace(sc);
             ept(")");
             Exp.New(e)
         } else if (sc |> eat("get")) {
-            whiteSpace(sc);
+            ws!();
             let e = parseExp(sc);
             whiteSpace(sc);
             ept(")");
             Exp.Get(e)
         } else if (sc |> eat("set")) {
-            whiteSpace(sc);
+            ws!();
             let e = parseExp(sc);
             whiteSpace(sc);
             let e1 = parseExp(sc);
@@ -98,7 +100,7 @@ mod Talpin.Parsing.Parser {
             ept(")");
             Exp.Set(e, e1)
         } else if (sc |> eat("begin")) {
-            whiteSpace(sc);
+            ws!();
             let e = parseExp(sc);
             whiteSpace(sc);
             let e1 = parseExp(sc);
@@ -106,7 +108,7 @@ mod Talpin.Parsing.Parser {
             ept(")");
             Exp.Let("_", e, e1)
         } else if (sc |> eat("if")) {
-            whiteSpace(sc);
+            ws!();
             let e = parseExp(sc);
             whiteSpace(sc);
             let e1 = parseExp(sc);
@@ -132,13 +134,17 @@ mod Talpin.Parsing.Parser {
             ept(")");
             Exp.Sub(e, e1)
         } else if (sc |> eat("==")) {
-            whiteSpace(sc);
             let e = parseExp(sc);
-            whiteSpace(sc);
             let e1 = parseExp(sc);
             whiteSpace(sc);
             ept(")");
             Exp.Eq(e, e1)
+        } else if (sc |> eat("do")) {
+            ws!();
+            let ef = parseName(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Do(ef)
         } else {
             whiteSpace(sc);
             let e = parseExp(sc);
@@ -185,6 +191,12 @@ mod Talpin.Parsing.Parser {
 
     def whiteSpace(sc: StringCursor[r]): Unit \ r =
         dropWhile(Char.isWhiteSpace, sc)
+
+    def whiteSpace!(rule: String, sc: StringCursor[r]): Unit \ r + Abort =
+        if (dropWhile!(Char.isWhiteSpace, sc)) ()
+        else {
+            err("whitespace", rule, sc)
+        }
 
     def err(expected: String, rule: String, sc: StringCursor[r]): a \ r + Abort =
         Abort.abort("(${rule}) expected ${expected} in: '${remaining(sc)}'")

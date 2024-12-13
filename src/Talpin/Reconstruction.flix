@@ -31,12 +31,15 @@ mod Talpin.Reconstruction {
         case Exp.New(e) => reconNew(tEnv, e)
         case Exp.Get(e) => reconGet(tEnv, e)
         case Exp.Set(e, e1) => reconSet(tEnv, e, e1)
+
         case Exp.BoolCst(_) => (Subst.id(), Type.Bool, Effect.Empty, Constraint.empty())
         case Exp.If(e, e1, e11) => reconIf(tEnv, e, e1, e11)
         case Exp.IntCst(_) => (Subst.id(), Type.Int, Effect.Empty, Constraint.empty())
         case Exp.Add(e, e1) => reconIntOp(tEnv, e, e1)
         case Exp.Sub(e, e1) => reconIntOp(tEnv, e, e1)
         case Exp.Eq(e, e1) => reconEq(tEnv, e, e1)
+
+        case Exp.Do(ef) => reconDo(tEnv, ef)
     }
 
     def reconVar(tEnv: TyEnv, x: String): (Subst, Type, Effect, Constraint) \ {FreshName, KeyNotFound} = {
@@ -156,6 +159,10 @@ mod Talpin.Reconstruction {
         let comp1 = compose(inner = s1, comp);
         let ef11 = appEffect(comp1)(ef) + appEffect(comp)(ef1);
         (compose(inner = s, comp1), Type.Bool, ef11, appConstraint(comp1)(k) + appConstraint(comp)(k1))
+    }
+
+    def reconDo(_tEnv: TyEnv, ef: String): (Subst, Type, Effect, Constraint) = {
+        (Subst.id(), Type.Unitt, Effect.Eff(ef), Constraint.empty())
     }
 
     def unify(tpe: Type, tpe1: Type): Subst \ Abort = match (tpe, tpe1) {

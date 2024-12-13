@@ -115,6 +115,10 @@ mod Talpin.Parsing.FlixParser {
             ws!("if");
             let e2 = parseExp(sc, canSemi = false);
             Exp.If(e, e1, e2)
+        } else if (eat("do", sc)) { // do Effect
+            ws!("do");
+            let ef = parseName(sc);
+            Exp.Do(ef)
         } else if (eat("true", sc)) Exp.BoolCst(true)
         else if (eat("false", sc)) Exp.BoolCst(false)
         else if (Char.isDigit(peekChar(sc))) parseInt(sc)

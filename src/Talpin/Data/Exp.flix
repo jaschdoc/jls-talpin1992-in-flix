@@ -24,6 +24,8 @@ pub enum Exp {
     case Add(Exp, Exp)
     case Sub(Exp, Exp)
     case Eq(Exp, Exp)
+
+    case Do(String)
 }
 
 instance ToString[Exp] {
@@ -51,6 +53,8 @@ mod Exp {
         case Add(_, _) => true
         case Sub(_, _) => true
         case Eq(_, _) => true
+
+        case Do(_) => true
     }
 
 
@@ -70,6 +74,8 @@ mod Exp {
         case Add(e, e1) => "(+ ${e} ${e1})"
         case Sub(e, e1) => "(- ${e} ${e1})"
         case Eq(e, e1) => "(== ${e} ${e1})"
+
+        case Do(e) => "(do ${e})"
     }
 
 }
