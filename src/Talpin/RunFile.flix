@@ -4,6 +4,13 @@ mod Talpin.RunFile {
     use Talpin.EffectSolver
     use Talpin.Data.Subst
 
+    pub def checkFileArg(): Unit \ IO = {
+        match Environment.getArgs() {
+            case path :: Nil => checkFile(path)
+            case _ => println("expects one path argument")
+        }
+    }
+
     pub def checkFile(path: String): Unit \ IO =
         run {
             match FileRead.handle(checkFileEff)(path) {
