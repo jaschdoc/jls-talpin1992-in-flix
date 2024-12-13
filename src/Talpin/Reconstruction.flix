@@ -75,7 +75,7 @@ mod Talpin.Reconstruction {
         let a1 = freshTVar();
         let zName = "e${FreshName.get()}";
         let z = Effect.Var(zName);
-        // typo in paper, x here is written as n twice
+        // PAPER ERROR: x here is written as n twice
         let tEnv1 = tEnv |> TyEnv.unbind(f) |> TyEnv.unbind(x) |> TyEnv.bindType(f, Type.Arrow(a, z, a1)) |> TyEnv.bindType(x, a);
         let (s, t, ef, k) = recon(tEnv1, e);
         let s1 = unify(appType(s)(a1), t);
@@ -85,7 +85,8 @@ mod Talpin.Reconstruction {
             case Some(Effect.Var(zName1)) => zName1
             case Some(other) => bug!(other |> toString)
         };
-        (comp, appType(comp)(Type.Arrow(a, ef, a1)), Effect.Empty, appConstraint(s1)(k + constraint(upperBound = zSubst, ef)))
+        // PAPER ERROR: effect should be the variable, not the effect
+        (comp, appType(comp)(Type.Arrow(a, z, a1)), Effect.Empty, appConstraint(s1)(k + constraint(upperBound = zSubst, ef)))
     }
 
 

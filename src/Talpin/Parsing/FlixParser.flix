@@ -57,7 +57,7 @@ mod Talpin.Parsing.FlixParser {
             let x = parseName(sc);
             whiteSpace(sc);
             ept("->", inner = "lambda");
-            let e = parseExp(sc, canSemi = true);
+            let e = parseExp(sc, canSemi = false);
             Exp.Abs(x, e)
         } else if (eat("rec", sc)) { // rec f \x -> exp
             ws!("rec");
@@ -67,7 +67,7 @@ mod Talpin.Parsing.FlixParser {
             let x = parseName(sc);
             whiteSpace(sc);
             ept("->", inner = "rec");
-            let e = parseExp(sc, canSemi = true);
+            let e = parseExp(sc, canSemi = false);
             Exp.Rec(f, x, e)
         } else if (eat("let", sc)) { // let x = e; e1
             ws!("let");
@@ -110,7 +110,7 @@ mod Talpin.Parsing.FlixParser {
             whiteSpace(sc);
             ept("else", inner = "if");
             ws!("if");
-            let e2 = parseExp(sc, canSemi = true);
+            let e2 = parseExp(sc, canSemi = false);
             Exp.If(e, e1, e2)
         } else if (eat("true", sc)) Exp.BoolCst(true)
         else if (eat("false", sc)) Exp.BoolCst(false)
