@@ -12,7 +12,10 @@ mod Talpin.Parsing.FlixParser {
 
     pub def parse(s: String): Exp \ Abort = region local {
         let sc = StringCursor.mk(local, '&', s);
-        parseExp(sc, canSemi = true)
+        let e = parseExp(sc, canSemi = true);
+        whiteSpace(sc);
+        expect("&", "parse", sc);
+        e
     }
 
     def parseExp(sc: StringCursor[r], canSemi: {canSemi = Bool}): Exp \ r + Abort = {

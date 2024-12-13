@@ -14,7 +14,10 @@ mod Talpin.Parsing.Parser {
                 Talpin.Parsing.FlixParser.parse(input)
             case None =>
                 let sc = StringCursor.mk(local, '&', s);
-                parseExp(sc)
+                let e = parseExp(sc);
+                whiteSpace(sc);
+                expect("&", "parse", sc);
+                e
         }
     }
 
