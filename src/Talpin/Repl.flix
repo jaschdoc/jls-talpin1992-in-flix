@@ -27,10 +27,10 @@ mod Talpin.Repl {
     def typeInput(input: String): Unit \ IO = {
         run {
             let p = Parser.parse(input);
-            let (s, t, ef, k) = FreshName.runWithState(() -> Reconstruction.reconstruct(p));
-            let s1 = EffectSolver.solv(k);
             println("-----------: ----------------------------------");
             println("        Exp: ${p}");
+            let (s, t, ef, k) = FreshName.runWithState(() -> Reconstruction.reconstruct(p));
+            let s1 = EffectSolver.solv(k);
             println("       Type: ${Subst.appType(s1)(t)}");
             println("     Effect: ${Subst.appEffect(s1)(ef)}");
             println("Constraints: ${k}");

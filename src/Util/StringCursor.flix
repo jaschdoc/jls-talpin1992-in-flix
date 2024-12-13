@@ -47,12 +47,30 @@ mod StringCursor {
         }
     }
 
+    pub def at(s: String, sc: StringCursor[r]): Bool \ r = {
+        let len = String.length(s);
+        if (peek(len, sc) == s) {
+            true
+        } else {
+            false
+        }
+    }
+
     pub def dropWhile(f: Char -> Bool \ ef, sc: StringCursor[r]): Unit \ ef + r = {
         let c = peekChar(sc);
         if (c != sc->eof and f(c)) {
             discard take(1, sc);
             dropWhile(f, sc)
         } else ()
+    }
+
+    pub def dropWhile!(f: Char -> Bool \ ef, sc: StringCursor[r]): Bool \ ef + r = {
+        let c = peekChar(sc);
+        if (c != sc->eof and f(c)) {
+            discard take(1, sc);
+            dropWhile(f, sc);
+            true
+        } else false
     }
 
     pub def hasPrefix(s: String, sc: StringCursor[r]): Bool \ r = {

@@ -9,8 +9,13 @@ mod Talpin.Parsing.Parser {
     use Util.StringCursor.dropWhile
 
     pub def parse(s: String): Exp \ Abort = region local {
-        let sc = StringCursor.mk(local, '&', s);
-        parseExp(sc)
+        match String.stripPrefix(substr = "flix:", s) {
+            case Some(input) =>
+                Talpin.Parsing.FlixParser.parse(input)
+            case None =>
+                let sc = StringCursor.mk(local, '&', s);
+                parseExp(sc)
+        }
     }
 
     def parseExp(sc: StringCursor[r]): Exp \ r + Abort = {
