@@ -32,6 +32,10 @@ mod Trace {
     pub def coerceMap(g: Set[RuntimeEffect] -> Set[RuntimeEffect] \ ef, f: Trace): Trace \ ef =
         f |> coerce |> g |> Trace
 
+    pub def remove(ef: RuntimeEffect, f: Trace): Trace = {
+        f |> coerceMap(Set.remove(ef))
+    }
+
 }
 
 }

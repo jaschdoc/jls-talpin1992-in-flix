@@ -47,6 +47,9 @@ mod Talpin.BigStep {
 
         case Exp.Do(ef) =>
             (U, Trace.singleton(Eff(ef)), s)
+        case Exp.Run(e, ef) =>
+            let (v, f, s1) = eval(s, env, e);
+            (v, f |> Trace.remove(Eff(ef)), s1)
     }
 
     def evalApp(s0: Store, env: Env, e: Exp, e1: Exp): (Value, Trace, Store) \ {Abort, KeyNotFound} = {

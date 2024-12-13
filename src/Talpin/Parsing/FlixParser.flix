@@ -51,18 +51,18 @@ mod Talpin.Parsing.FlixParser {
         def ept(s, h) = expect(s, "parseExpSimp:${h#inner}", sc);
         def ws!(h) = whiteSpace!("parseExpSimp:${h}", sc);
         whiteSpace(sc);
-        if (eat("(", sc)) { // (exp)
+        if (eat("(", sc)) { // (e)
             let e = parseExp(sc, canSemi = true);
             whiteSpace(sc);
             ept(")", inner = "paren");
             e
-        } else if (eat("\\", sc)) { // \x -> exp
+        } else if (eat("\\", sc)) { // \x -> e
             let x = parseName(sc);
             whiteSpace(sc);
             ept("->", inner = "lambda");
             let e = parseExp(sc, canSemi = false);
             Exp.Abs(x, e)
-        } else if (eat("rec", sc)) { // rec f \x -> exp
+        } else if (eat("rec", sc)) { // rec f \x -> e
             ws!("rec");
             let f = parseName(sc);
             whiteSpace(sc);
@@ -119,6 +119,12 @@ mod Talpin.Parsing.FlixParser {
             ws!("do");
             let ef = parseName(sc);
             Exp.Do(ef)
+        } else if (eat("run", sc)) { // run e Effect
+            ws!("run");
+            let e = parseExp(sc, canSemi = false);
+            whiteSpace(sc);
+            let ef = parseName(sc);
+            Exp.Run(e, ef)
         } else if (eat("true", sc)) Exp.BoolCst(true)
         else if (eat("false", sc)) Exp.BoolCst(false)
         else if (Char.isDigit(peekChar(sc))) parseInt(sc)

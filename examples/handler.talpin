@@ -1,0 +1,3 @@
+flix:
+
+\f -> \x -> run f(x) Crash

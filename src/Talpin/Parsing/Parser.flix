@@ -145,6 +145,14 @@ mod Talpin.Parsing.Parser {
             whiteSpace(sc);
             ept(")");
             Exp.Do(ef)
+        } else if (sc |> eat("run")) {
+            ws!();
+            let e = parseExp(sc);
+            whiteSpace(sc);
+            let ef = parseName(sc);
+            whiteSpace(sc);
+            ept(")");
+            Exp.Run(e, ef)
         } else {
             whiteSpace(sc);
             let e = parseExp(sc);

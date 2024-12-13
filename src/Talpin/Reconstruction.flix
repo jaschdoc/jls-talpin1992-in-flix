@@ -40,6 +40,7 @@ mod Talpin.Reconstruction {
         case Exp.Eq(e, e1) => reconEq(tEnv, e, e1)
 
         case Exp.Do(ef) => reconDo(tEnv, ef)
+        case Exp.Run(e, ef) => reconRun(tEnv, e, ef)
     }
 
     def reconVar(tEnv: TyEnv, x: String): (Subst, Type, Effect, Constraint) \ {FreshName, KeyNotFound} = {
@@ -161,8 +162,16 @@ mod Talpin.Reconstruction {
         (compose(inner = s, comp1), Type.Bool, ef11, appConstraint(comp1)(k) + appConstraint(comp)(k1))
     }
 
-    def reconDo(_tEnv: TyEnv, ef: String): (Subst, Type, Effect, Constraint) = {
+    def reconDo(_tEnv: TyEnv, ef: String): (Subst, Type, Effect, Constraint) =
         (Subst.id(), Type.Unitt, Effect.Eff(ef), Constraint.empty())
+
+    def reconRun(tEnv: TyEnv, e: Exp, effect: String): (Subst, Type, Effect, Constraint) \ {Abort, FreshName, KeyNotFound} = {
+        let (s, t, _ef, k) = recon(tEnv, e);
+        let qName = "e${FreshName.get()}";
+        let _q = Effect.Var(qName);
+        let z = freshEVar();
+        let _union = z + Effect.Eff(effect);
+        (s, t, z, k + Abort.abort("run not implemented"))
     }
 
     def unify(tpe: Type, tpe1: Type): Subst \ Abort = match (tpe, tpe1) {
