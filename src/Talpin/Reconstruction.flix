@@ -11,12 +11,64 @@ mod Talpin.Reconstruction {
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
     use Talpin.Data.TyScheme
+    use Talpin.Reconstruction
+    use Talpin.EffectSolver
+    use Talpin.Data.Subst
     use Talpin.FreshName
     use Util.Util.init
+    use Util.Util
 
     use Functor.map
     use Foldable.toList
     use ToString.toString
+
+    pub type alias Info = {
+        exp = Exp,
+        tpe = Type,
+        effect = Effect,
+        constraints = Constraint,
+        binders = Vector[(String, TyScheme)],
+        preEffTpe = Type,
+        preEffEffect = Effect,
+        preEffSubst = Subst,
+        solvedConstraints = Constraint,
+        subst = Subst
+    }
+
+    mod Info {
+        pub def toString(i: Info): String = region local {
+            let {exp = _exp, tpe = _tpe, effect = _effect, constraints = _constraints, binders = _binders, preEffTpe = _preEffTpe, preEffEffect = _preEffEffect, preEffSubst = _preEffSubst, solvedConstraints = _solvedConstraints, subst = _subst} = i;
+            let _l = MutList.empty(local);
+            "wip"
+    // println("       Type: ${}");
+    //     println("     Effect: ${}");
+    //     println("Constraints: ${k}");
+    //     println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
+    //     println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
+    //     println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appTyScheme(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
+
+        }
+    }
+
+    pub def reconstructInfo(exp: Exp): Info \ {Abort, KeyNotFound} = {
+        let ((s, t, ef, k), binders) = Util.runWith(() -> Reconstruction.reconstruct(exp), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList);
+        let s1 = EffectSolver.solv(k);
+        let finalSubst = Subst.compose(inner = s, s1);
+        {
+            exp = exp,
+            tpe = Subst.appType(s1)(t),
+            effect = Subst.appEffect(s1)(ef),
+            constraints = k,
+            binders = binders |> Vector.map(match (x, xt) -> (x, Subst.appTyScheme(finalSubst)(xt))),
+
+            preEffTpe = t,
+            preEffEffect = ef,
+            preEffSubst = s,
+
+            solvedConstraints = Subst.appConstraint(s1, k),
+            subst = finalSubst
+        }
+    }
 
     pub eff BinderTypes {
         def typed(x: String, t: TyScheme): Unit
