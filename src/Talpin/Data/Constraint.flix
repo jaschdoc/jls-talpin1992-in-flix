@@ -24,6 +24,9 @@ mod Constraint {
     pub def empty(): Constraint =
         Constraint(Set.empty())
 
+    pub def isEmpty(k: Constraint): Bool =
+        k |> coerce |> Set.isEmpty
+
     pub def coerce(k: Constraint): Set[(String, Effect)] = {
         let Constraint(s) = k;
         s

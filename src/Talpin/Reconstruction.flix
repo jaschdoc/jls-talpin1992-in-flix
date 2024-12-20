@@ -10,6 +10,7 @@ mod Talpin.Reconstruction {
     use Talpin.Data.Subst.{appEffect, appEVarOpt, appConstraint, appReg, appType, appTyEnv, bindTVarAll, bindRVarAll, bindEVarAll, compose}
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
+    use Talpin.Data.TyScheme
     use Talpin.FreshName
     use Util.Util.init
 
@@ -18,16 +19,17 @@ mod Talpin.Reconstruction {
     use ToString.toString
 
     pub eff BinderTypes {
-        def typed(x: String, t: Type): Unit
+        def typed(x: String, t: TyScheme): Unit
     }
 
     mod BinderTypes {
         use Talpin.Data.Type
+        use Talpin.Data.TyScheme
 
         pub def handleWithNothing(f: a -> b \ ef): a -> b \ ef - BinderTypes =
             x -> run f(x) with BinderTypes { def typed(_x, _t, k) = k() }
 
-        pub def handleWithList(f: a -> b \ ef): a -> (b, Vector[(String, Type)]) \ ef - BinderTypes =
+        pub def handleWithList(f: a -> b \ ef): a -> (b, Vector[(String, TyScheme)]) \ ef - BinderTypes =
             x -> region local {
                 let types = MutList.empty(local);
                 run {
@@ -78,15 +80,22 @@ mod Talpin.Reconstruction {
 
     def reconLet(tEnv: TyEnv, x: String, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t, ef, k) = recon(tEnv, e);
-        if (not expansive(e) and false) {
+        // don't need to generalize for unused let-binders
+        if (String.startsWith(prefix = "_", x)) {
+            let tEnv1 = appTyEnv(s)(tEnv);
+            let (s1, t1, ef1, k1) = recon(tEnv1, e1);
+            (compose(inner = s, s1), t1, appEffect(s1)(ef) + ef1, appConstraint(s1)(k) + k1)
+        } else if (not expansive(e)) {
             // TODO: add gen
             let vs = Type.fv(t) + Constraint.fv(k) - TyEnv.fv(tEnv);
-            let tEnv1 = if (x == "_") appTyEnv(s)(tEnv) else appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bind(x, vs, t, k);
+            let scheme = TyScheme.genType(t, k, vs);
+            BinderTypes.typed(x, scheme);
+            let tEnv1 = appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bind(x, scheme);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
             (compose(inner = s, s1), t1, ef1, k1)
         } else {
-            BinderTypes.typed(x, t);
-            let tEnv1 = if (x == "_") appTyEnv(s)(tEnv) else appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bindType(x, t);
+            BinderTypes.typed(x, TyScheme.fromType(t));
+            let tEnv1 = appTyEnv(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bindType(x, t);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
             (compose(inner = s, s1), t1, appEffect(s1)(ef) + ef1, appConstraint(s1)(k) + k1)
         }

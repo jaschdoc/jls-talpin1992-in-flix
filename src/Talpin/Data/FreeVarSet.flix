@@ -38,6 +38,11 @@ mod FreeVarSet {
         case Empty => false
     }
 
+    pub def removeTVars(s: Set[String], fv: FreeVarSet): FreeVarSet = match fv {
+        case Sets(t, r, e) => Sets(Set.difference(t, s), r, e)
+        case Empty => Empty
+    }
+
     pub def singleRVar(x: String): FreeVarSet =
         Sets(Set.empty(), Set#{x}, Set.empty())
 
@@ -46,12 +51,22 @@ mod FreeVarSet {
         case Empty => false
     }
 
+    pub def removeRVars(s: Set[String], fv: FreeVarSet): FreeVarSet = match fv {
+        case Sets(t, r, e) => Sets(t, Set.difference(r, s), e)
+        case Empty => Empty
+    }
+
     pub def singleEVar(x: String): FreeVarSet =
         Sets(Set.empty(), Set.empty(), Set#{x})
 
     pub def containsEVar(x: String, fv: FreeVarSet): Bool = match fv {
         case Sets(_, _, e) => Set.memberOf(x, e)
         case Empty => false
+    }
+
+    pub def removeEVars(s: Set[String], fv: FreeVarSet): FreeVarSet = match fv {
+        case Sets(t, r, e) => Sets(t, r, Set.difference(e, s))
+        case Empty => Empty
     }
 
     pub def union(fv: FreeVarSet, fv1: FreeVarSet): FreeVarSet = match (fv, fv1) {

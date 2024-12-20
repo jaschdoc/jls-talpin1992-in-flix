@@ -3,6 +3,7 @@ mod Talpin.Repl {
     use Talpin.Reconstruction
     use Talpin.Data.Type
     use Talpin.Data.Constraint
+    use Talpin.Data.TyScheme
     use Talpin.Data.Subst
     use Talpin.FreshName
     use Talpin.EffectSolver
@@ -38,7 +39,7 @@ mod Talpin.Repl {
             println("Constraints: ${k}");
             println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
             println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-            println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appType(finalSubst)(xt)}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
+            println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appTyScheme(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
         } with Abort {
             def abort(msg, _k) = println("Err: ${msg}")
         } with KeyNotFound {
