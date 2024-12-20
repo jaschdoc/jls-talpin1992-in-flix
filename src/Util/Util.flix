@@ -1,7 +1,7 @@
 mod Util.Util {
     import java.lang.System
 
-    pub def handleAbort(f: a -> b \ ef): a -> b \ ef - Abort + IO =
+    pub def abortHandleWithCrash(f: a -> b \ ef): a -> b \ ef - Abort + IO =
         x -> run f(x) with Abort {
             def abort(m, _k) = {
                 System.err.println(m);
@@ -9,7 +9,7 @@ mod Util.Util {
             }
         }
 
-    pub def handleKeyNotFound(f: a -> b \ ef): a -> b \ ef - KeyNotFound + Abort =
+    pub def keyNotFoundHandleWithAbort(f: a -> b \ ef): a -> b \ ef - KeyNotFound + Abort =
         x -> run f(x) with KeyNotFound {
             def keyNotFound(m, _k) = Abort.abort(m)
         }
@@ -18,7 +18,7 @@ mod Util.Util {
         handleAll(f)()
 
     pub def handleAll(f: a -> b \ ef): a -> b \ ef - Abort - KeyNotFound + IO =
-        (handleKeyNotFound >> handleAbort)(f)
+        (keyNotFoundHandleWithAbort >> abortHandleWithCrash)(f)
 
     pub def init(f: Unit -> t \ ef, n: Int32): List[t] \ ef = {
         def loop(count, acc) = {
@@ -27,4 +27,13 @@ mod Util.Util {
         };
         loop(n, Nil)
     }
+
+    pub def runWith(f: Unit -> a \ ef1, handler: (Unit -> a \ ef1) -> (Unit -> b \ ef2)): b \ ef2 =
+        handler(f)()
+
+    pub def fileReadHandleWithAbort(f: a -> b \ ef): a -> b \ ef - FileRead + {Abort, IO} =
+        x -> match FileRead.handle(f)(x) {
+            case Ok(v) => v
+            case Err(_ioError) => Abort.abort("IoError")
+        }
 }

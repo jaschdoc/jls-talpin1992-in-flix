@@ -3,13 +3,14 @@ mod Talpin.RunFile {
     use Talpin.Reconstruction
     use Talpin.EffectSolver
     use Talpin.Data.Subst
+    use Util.Util
 
-    pub def checkFileArg(): Unit \ IO = {
+    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} = Util.runWith(() -> {
         match Environment.getArgs() {
             case path :: Nil => checkFile(path)
             case _ => println("expects one path argument")
         }
-    }
+    }, Environment.handle >> Util.fileReadHandleWithAbort >> Abort.handle)
 
     pub def checkFile(path: String): Unit \ IO =
         run {

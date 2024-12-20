@@ -8,7 +8,7 @@ mod Talpin.Repl {
     use Talpin.EffectSolver
     use Talpin.Data.Effect
 
-    pub def main(): Unit \ IO = App.runAll(() -> {
+    pub def main(): Unit \ IO + Net = App.runAll(() -> {
         println("-- REPL READY (':exit' to exit) --");
         println("Write a single line expression and I will type it");
         loop()
