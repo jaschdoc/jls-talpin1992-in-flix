@@ -30,19 +30,20 @@ mod Talpin.RunFile {
                 with Abort {
                     def abort(m, _k) = Abort.abort("Parsing Error: ${m}")
                 };
-            let (s, t, ef, k) =
-                run FreshName.runWithState(() -> Reconstruction.reconstruct(p))
+            let ((s, t, ef, k), _binders) =
+                run Util.runWith(() -> Reconstruction.reconstruct(p), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList)
                 with Abort {
                     def abort(m, _k) = Abort.abort("Typer Error: ${m}")
                 } with KeyNotFound {
                     def keyNotFound(msg, _k) = Abort.abort("Typer Error: ${msg}")
                 };
             let s1 = EffectSolver.solv(k);
+            let finalSubst = Subst.compose(inner = s, s1);
             println("       Type: ${Subst.appType(s1)(t)}");
             println("     Effect: ${Subst.appEffect(s1)(ef)}");
             println("Constraints: ${k}");
             println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}");
-            println("  PostSubst: ${Subst.compose(inner = s, s1) |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}")
+            println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}")
 
         } else {
             println("cannot find ${path}")

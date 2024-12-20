@@ -7,6 +7,7 @@ mod Talpin.Repl {
     use Talpin.FreshName
     use Talpin.EffectSolver
     use Talpin.Data.Effect
+    use Util.Util
 
     pub def main(): Unit \ IO + Net = App.runAll(() -> {
         println("-- REPL READY (':exit' to exit) --");
@@ -29,13 +30,15 @@ mod Talpin.Repl {
             let p = Parser.parse(input);
             println("-----------: ----------------------------------");
             println("        Exp: ${p}");
-            let (s, t, ef, k) = FreshName.runWithState(() -> Reconstruction.reconstruct(p));
+            let ((s, t, ef, k), binders) = Util.runWith(() -> Reconstruction.reconstruct(p), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList);
             let s1 = EffectSolver.solv(k);
+            let finalSubst = Subst.compose(inner = s, s1);
             println("       Type: ${Subst.appType(s1)(t)}");
             println("     Effect: ${Subst.appEffect(s1)(ef)}");
             println("Constraints: ${k}");
-            println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}");
-            println("  PostSubst: ${Subst.compose(inner = s, s1) |> ToString.toString |> (str -> "\n" + str)|> String.indent(13)}")
+            println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
+            println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
+            println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appType(finalSubst)(xt)}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
         } with Abort {
             def abort(msg, _k) = println("Err: ${msg}")
         } with KeyNotFound {

@@ -14,11 +14,11 @@ mod Util.Util {
             def keyNotFound(m, _k) = Abort.abort(m)
         }
 
-    pub def runAll(f: Unit -> t \ ef): t \ ef - Abort - KeyNotFound + IO =
+    pub def runAll(f: Unit -> t \ ef): t \ ef - Abort - KeyNotFound - Talpin.FreshName - Talpin.Reconstruction.BinderTypes + IO =
         handleAll(f)()
 
-    pub def handleAll(f: a -> b \ ef): a -> b \ ef - Abort - KeyNotFound + IO =
-        (keyNotFoundHandleWithAbort >> abortHandleWithCrash)(f)
+    pub def handleAll(f: a -> b \ ef): a -> b \ ef - Abort - KeyNotFound - Talpin.FreshName - Talpin.Reconstruction.BinderTypes + IO =
+        (Talpin.FreshName.handleWithState >> Talpin.Reconstruction.BinderTypes.handleWithNothing >> keyNotFoundHandleWithAbort >> abortHandleWithCrash)(f)
 
     pub def init(f: Unit -> t \ ef, n: Int32): List[t] \ ef = {
         def loop(count, acc) = {

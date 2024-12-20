@@ -7,13 +7,13 @@ pub eff FreshName {
 mod FreshName {
     use Add.add
 
-    pub def runWithState(f: Unit -> b \ ef): b \ ef - FreshName = region local {
+    pub def handleWithState(f: a -> b \ ef): a -> b \ ef - FreshName = x -> region local {
         let counter = Ref.fresh(local, -1);
         def next() = {
             counter |> Ref.transform(add(1));
             Ref.get(counter)
         };
-        run f() with FreshName {
+        run f(x) with FreshName {
             def get(k) = k(next())
         }
     }

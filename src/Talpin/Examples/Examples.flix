@@ -1,20 +1,20 @@
 mod Talpin.Examples {
-    use Talpin.Data.Exp
-    use Talpin.Data.Value
-    use Talpin.Data.Trace
+    use Talpin.BigStep.eval
+    use Talpin.Data.Constraint
+    use Talpin.Data.Effect
     use Talpin.Data.Env
+    use Talpin.Data.Exp
     use Talpin.Data.Store
+    use Talpin.Data.Trace
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
-    use Talpin.Data.Effect
-    use Talpin.Data.Constraint
-    use Talpin.FreshName
+    use Talpin.Data.Value
     use Talpin.EffectSolver
-    use Talpin.BigStep.eval
+    use Talpin.FreshName
     use Talpin.Parsing.Parser.parse
     use Talpin.Reconstruction.reconstruct
-    use Util.Util.runAll
     use Util.Util.handleAll
+    use Util.Util.runAll
 
     pub def exp01(): Exp \ IO = runAll(() -> parse(" ( (  lambda  (  x  )  (  new   x  )  )  (  lambda ( q )  q ) ) "))
 
@@ -54,9 +54,9 @@ mod Talpin.Examples {
         eval(Store.empty(), Env.empty(), exp03())
     })
 
-    pub def inferExp03(): (Type, Effect) \ IO = FreshName.runWithState(handleAll(() -> {
+    pub def inferExp03(): (Type, Effect) \ IO = runAll(() -> {
         let (_, t, ef) = reconstruct(exp03()) |> EffectSolver.solvFull;
         (t, ef)
-    }))
+    })
 
 }
