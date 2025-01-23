@@ -132,12 +132,8 @@ mod Talpin.Reconstruction {
 
     def reconLet(tEnv: TyEnv, x: String, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t, ef, k) = recon(tEnv, e);
-        // don't need to generalize for unused let-binders
-        if (String.startsWith(prefix = "_", x)) {
-            let tEnv1 = appTyEnv(s)(tEnv);
-            let (s1, t1, ef1, k1) = recon(tEnv1, e1);
-            (compose(inner = s, s1), t1, appEffect(s1)(ef) + ef1, appConstraint(s1)(k) + k1)
-        } else if (not expansive(e)) {
+        // don't need to generalize for _xyz let-binders
+        if (not expansive(e) and not String.startsWith(prefix = "_", x)) {
             let vs = Type.fv(t) + Constraint.fv(k) - TyEnv.fv(tEnv);
             let scheme = TyScheme.genType(t, k, vs);
             BinderTypes.typed(x, scheme);
@@ -157,7 +153,8 @@ mod Talpin.Reconstruction {
         let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
         let zName = "e${FreshName.get()}";
         let z = Effect.Var(zName);
-        (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + dbg!!(constraint(upperBound = zName, ef)))
+        BinderTypes.typed(x, TyScheme.fromType(a));
+        (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + constraint(upperBound = zName, ef))
     }
 
     def reconRec(tEnv: TyEnv, f: String, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
