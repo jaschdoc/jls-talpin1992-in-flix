@@ -2,7 +2,7 @@ mod Talpin.Data {
 
 pub enum Type {
     case Unitt
-    case Var(String)
+    case Var(TVar)
     case Ref(Reg, Type)
     case Arrow(Type, Effect, Type)
 

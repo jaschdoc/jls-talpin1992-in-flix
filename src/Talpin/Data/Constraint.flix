@@ -1,11 +1,11 @@
 mod Talpin.Data {
 
-pub enum Constraint(Set[(String, Effect)])
+pub enum Constraint(Set[(EVar, Effect)])
 
 instance Coerce[Constraint] {
-    type Out = Set[(String, Effect)]
+    type Out = Set[(EVar, Effect)]
 
-    pub def coerce(k: Constraint): Set[(String, Effect)] = Constraint.coerce(k)
+    pub def coerce(k: Constraint): Set[(EVar, Effect)] = Constraint.coerce(k)
 }
 
 instance ToString[Constraint] {
@@ -20,6 +20,7 @@ instance Add[Constraint] {
 mod Constraint {
     use Talpin.Data.Effect
     use Talpin.Data.FreeVarSet
+    use Talpin.Data.EVar
 
     pub def empty(): Constraint =
         Constraint(Set.empty())
@@ -27,12 +28,12 @@ mod Constraint {
     pub def isEmpty(k: Constraint): Bool =
         k |> coerce |> Set.isEmpty
 
-    pub def coerce(k: Constraint): Set[(String, Effect)] = {
+    pub def coerce(k: Constraint): Set[(EVar, Effect)] = {
         let Constraint(s) = k;
         s
     }
 
-    pub def constraint(upperBound: {upperBound = String}, ef: Effect): Constraint =
+    pub def constraint(upperBound: {upperBound = EVar}, ef: Effect): Constraint =
         Constraint(Set.singleton((upperBound#upperBound, ef)))
 
     pub def combine(k1: Constraint, k2: Constraint): Constraint =

@@ -1,9 +1,9 @@
 mod Talpin.Data {
 
 pub type alias TyScheme = {
-    tVars = Set[String],
-    rVars = Set[String],
-    eVars = Set[String],
+    tVars = Set[TVar],
+    rVars = Set[RVar],
+    eVars = Set[EVar],
     tpe = Type,
     k = Constraint
 }
@@ -43,7 +43,7 @@ mod TyScheme {
         if (isEmpty(s)) s#tpe |> ToString.toString
         else {
             let {tVars, rVars, eVars, tpe, k} = s;
-            let vars = Set.toList(tVars) `List.append` Set.toList(rVars) `List.append` Set.toList(eVars);
+            let vars = List.map(ToString.toString, Set.toList(tVars)) `List.append` List.map(ToString.toString, Set.toList(rVars)) `List.append` List.map(ToString.toString, Set.toList(eVars));
             "∀${vars |> List.join(", ")}. ${tpe}   with ${k}"
         }
     }

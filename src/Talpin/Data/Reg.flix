@@ -3,7 +3,7 @@ mod Talpin.Data {
 // Region is already used in Flix
 pub enum Reg with Eq, Order {
     case RegConst(Int32)
-    case RegVar(String)
+    case RegVar(RVar)
 }
 
 instance ToString[Reg] {

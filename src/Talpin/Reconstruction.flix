@@ -11,6 +11,12 @@ mod Talpin.Reconstruction {
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
     use Talpin.Data.TyScheme
+    use Talpin.Data.TVar
+    use Talpin.Data.TVar.TVar
+    use Talpin.Data.RVar
+    use Talpin.Data.RVar.RVar
+    use Talpin.Data.EVar
+    use Talpin.Data.EVar.EVar
     use Talpin.Reconstruction
     use Talpin.EffectSolver
     use Talpin.Data.Subst
@@ -129,9 +135,9 @@ mod Talpin.Reconstruction {
 
     def reconVar(tEnv: TyEnv, x: String): (Subst, Type, Effect, Constraint) \ {FreshName, KeyNotFound} = {
         let {tVars = tVars0, rVars = rVars0, eVars = eVars0, tpe = t, k} = tEnv[x];
-        let tVars = tVars0 |> toList |> map(tx -> (tx, freshTVar()));
-        let rVars = rVars0 |> toList |> map(tx -> (tx, freshRVar()));
-        let eVars = eVars0 |> toList |> map(tx -> (tx, freshEVar()));
+        let tVars = tVars0 |> toList |> map(tx -> (tx, Type.Var(freshTVar())));
+        let rVars = rVars0 |> toList |> map(tx -> (tx, Reg.RegVar(freshRVar())));
+        let eVars = eVars0 |> toList |> map(tx -> (tx, Effect.Var(freshEVar())));
         let s = Subst.empty() |> bindTVarAll(tVars) |> bindRVarAll(rVars) |> bindEVarAll(eVars);
         (Subst.id(), appType(s)(t), Effect.Empty, appConstraint(s)(k))
     }
@@ -155,18 +161,18 @@ mod Talpin.Reconstruction {
     }
 
     def reconAbs(tEnv: TyEnv, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
-        let a = freshTVar();
+        let a = Type.Var(freshTVar());
         let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
-        let zName = "e${FreshName.get()}";
+        let zName = freshEVar();
         let z = Effect.Var(zName);
         BinderTypes.typed(x, TyScheme.fromType(a));
         (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + constraint(upperBound = zName, ef))
     }
 
     def reconRec(tEnv: TyEnv, f: String, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
-        let a = freshTVar();
-        let a1 = freshTVar();
-        let zName = "e${FreshName.get()}";
+        let a = Type.Var(freshTVar());
+        let a1 = Type.Var(freshTVar());
+        let zName = freshEVar();
         let z = Effect.Var(zName);
         // PAPER ERROR: x here is written as n twice
         let tEnv1 = tEnv |> TyEnv.unbind(f) |> TyEnv.unbind(x) |> TyEnv.bindType(f, Type.Arrow(a, z, a1)) |> TyEnv.bindType(x, a);
@@ -186,23 +192,23 @@ mod Talpin.Reconstruction {
     def reconApp(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t,  ef, k) = recon(tEnv, e);
         let (s1, t1, ef1, k1) = recon(tEnv, e1);
-        let a = freshTVar();
-        let z = freshEVar();
+        let a = Type.Var(freshTVar());
+        let z = Effect.Var(freshEVar());
         let s11 = unify(appType(s1)(t), Type.Arrow(t1, z, a));
         let ef11 = appEffect(s11)(appEffect(s1)(ef) + ef1 + z);
         (compose(inner = compose(inner = s, s1), s11), appType(s11)(a), ef11, appConstraint(s11)(appConstraint(s1)(k) + k1))
     }
 
     def reconNew(tEnv: TyEnv, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
-        let r = freshRVar();
+        let r = Reg.RegVar(freshRVar());
         let (s, t, ef, k) = recon(tEnv, e);
         (s, Type.Ref(r, t), ef + Effect.Init(r), k)
     }
 
     def reconGet(tEnv: TyEnv, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t, ef, k) = recon(tEnv, e);
-        let a = freshTVar();
-        let r = freshRVar();
+        let a = Type.Var(freshTVar());
+        let r = Reg.RegVar(freshRVar());
         let s1 = unify(Type.Ref(r, a), t);
         (compose(inner = s, s1), appType(s1)(a), ef + Effect.Read(appReg(s1)(r)), appConstraint(s1)(k))
     }
@@ -210,7 +216,7 @@ mod Talpin.Reconstruction {
     def reconSet(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t, ef, k) = recon(tEnv, e);
         let (s1, t1, ef1, k1) = recon(tEnv, e1);
-        let r = freshRVar();
+        let r = Reg.RegVar(freshRVar());
         let s11 = unify(Type.Ref(r, t1), appType(s1)(t));
         let ef11 = appEffect(s11)(appEffect(s1)(ef) + ef1 + Effect.Write(r));
         (compose(inner = compose(inner = s, s1), s11), Type.Unitt, ef11, appConstraint(s11)(appConstraint(s1)(k) + k1))
@@ -256,9 +262,9 @@ mod Talpin.Reconstruction {
 
     def reconRun(tEnv: TyEnv, e: Exp, effect: String): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
         let (s, t, _ef, k) = recon(tEnv, e);
-        let qName = "e${FreshName.get()}";
+        let qName = freshEVar();
         let _q = Effect.Var(qName);
-        let z = freshEVar();
+        let z = Effect.Var(freshEVar());
         let _union = z + Effect.Eff(effect);
         (s, t, z, k + Abort.abort("run not implemented"))
     }
@@ -285,10 +291,10 @@ mod Talpin.Reconstruction {
         case (t, t1) => Abort.abort("${t} !~ ${t1}")
     }
 
-    def freshTVar(): Type \ FreshName = Type.Var("t${FreshName.get()}")
+    def freshTVar(): TVar \ FreshName = TVar("t${FreshName.get()}")
 
-    def freshRVar(): Reg \ FreshName = Reg.RegVar("r${FreshName.get()}")
+    def freshRVar(): RVar \ FreshName = RVar("r${FreshName.get()}")
 
-    def freshEVar(): Effect \ FreshName = Effect.Var("e${FreshName.get()}")
+    def freshEVar(): EVar \ FreshName = EVar("e${FreshName.get()}")
 
 }

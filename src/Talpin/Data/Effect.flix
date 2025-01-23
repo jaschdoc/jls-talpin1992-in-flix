@@ -6,7 +6,7 @@ pub enum Effect with Eq, Order {
     case Read(Reg)
     case Write(Reg)
     case Union(Effect, Effect)
-    case Var(String)
+    case Var(EVar)
 
     case Eff(String)
 }

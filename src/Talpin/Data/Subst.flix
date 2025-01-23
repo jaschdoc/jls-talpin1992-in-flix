@@ -1,11 +1,14 @@
 mod Talpin.Data {
 
-pub enum Subst(Map[String, Type], Map[String, Reg], Map[String, Effect])
+pub enum Subst(Map[TVar, Type], Map[RVar, Reg], Map[EVar, Effect])
 
 instance ToString[Subst] {
     pub def toString(subst: Subst): String = Subst.toString(subst)
 }
 
+trait SubstApp[t] {
+    pub def app(s: Subst, x: t): t
+}
 
 mod Subst {
     use Option.getWithDefault
@@ -16,6 +19,9 @@ mod Subst {
     use Talpin.Data.TyScheme
     use Talpin.Data.TyEnv
     use Talpin.Data.Constraint
+    use Talpin.Data.TVar
+    use Talpin.Data.RVar
+    use Talpin.Data.EVar
 
     pub def empty(): Subst =
         Subst(Map.empty(), Map.empty(), Map.empty())
@@ -25,13 +31,13 @@ mod Subst {
         Map.isEmpty(t) and Map.isEmpty(r) and Map.isEmpty(e)
     }
 
-    pub def singleTVar(x: String, t: Type): Subst =
+    pub def singleTVar(x: TVar, t: Type): Subst =
         empty() |> bindTVar(x, t)
 
-    pub def singleRVar(x: String, t: Reg): Subst =
+    pub def singleRVar(x: RVar, t: Reg): Subst =
         empty() |> bindRVar(x, t)
 
-    pub def singleEVar(x: String, t: Effect): Subst =
+    pub def singleEVar(x: EVar, t: Effect): Subst =
         empty() |> bindEVar(x, t)
 
     pub def id(): Subst =
@@ -56,71 +62,71 @@ mod Subst {
         }
     }
 
-    pub def bindTVar(x: String, t: Type, subst: Subst): Subst = {
+    pub def bindTVar(x: TVar, t: Type, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap |> Map.insert(x, t), rMap, eMap)
     }
 
-    pub def bindTVarAll(l: List[(String, Type)], subst: Subst): Subst =
+    pub def bindTVarAll(l: List[(TVar, Type)], subst: Subst): Subst =
         (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindTVar(x, t, acc))
 
-    pub def unbindTVar(x: String, subst: Subst): Subst = {
+    pub def unbindTVar(x: TVar, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap |> Map.remove(x), rMap, eMap)
     }
 
-    pub def appTVar(subst: Subst, x: String): Type \ KeyNotFound = {
+    pub def appTVar(subst: Subst, x: TVar): Type \ KeyNotFound = {
         let Subst(tMap, _, _) = subst;
         tMap[x]
     }
 
-    pub def appTVarOpt(subst: Subst, x: String): Option[Type] = {
+    pub def appTVarOpt(subst: Subst, x: TVar): Option[Type] = {
         let Subst(tMap, _, _) = subst;
         Map.get(x, tMap)
     }
 
-    pub def bindRVar(x: String, p: Reg, subst: Subst): Subst = {
+    pub def bindRVar(x: RVar, p: Reg, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap |> Map.insert(x, p), eMap)
     }
 
-    pub def bindRVarAll(l: List[(String, Reg)], subst: Subst): Subst =
+    pub def bindRVarAll(l: List[(RVar, Reg)], subst: Subst): Subst =
         (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindRVar(x, t, acc))
 
-    pub def unbindRVar(x: String, subst: Subst): Subst = {
+    pub def unbindRVar(x: RVar, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap |> Map.remove(x), eMap)
     }
 
-    pub def appRVar(subst: Subst, x: String): Reg \ KeyNotFound = {
+    pub def appRVar(subst: Subst, x: RVar): Reg \ KeyNotFound = {
         let Subst(_, rMap, _) = subst;
         rMap[x]
     }
 
-    pub def appRVarOpt(subst: Subst, x: String): Option[Reg] = {
+    pub def appRVarOpt(subst: Subst, x: RVar): Option[Reg] = {
         let Subst(_, rMap, _) = subst;
         Map.get(x, rMap)
     }
 
-    pub def bindEVar(x: String, ef: Effect, subst: Subst): Subst = {
+    pub def bindEVar(x: EVar, ef: Effect, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap, eMap |> Map.insert(x, ef))
     }
 
-    pub def bindEVarAll(l: List[(String, Effect)], subst: Subst): Subst =
+    pub def bindEVarAll(l: List[(EVar, Effect)], subst: Subst): Subst =
         (subst, l) ||> List.foldLeft(acc -> match (x, t) -> bindEVar(x, t, acc))
 
-    pub def unbindEVar(x: String, subst: Subst): Subst = {
+    pub def unbindEVar(x: EVar, subst: Subst): Subst = {
         let Subst(tMap, rMap, eMap) = subst;
         Subst(tMap, rMap, eMap |> Map.remove(x))
     }
 
-    pub def appEVar(subst: Subst, x: String): Effect \ KeyNotFound = {
+    pub def appEVar(subst: Subst, x: EVar): Effect \ KeyNotFound = {
         let Subst(_, _, eMap) = subst;
         eMap[x]
     }
 
-    pub def appEVarOpt(subst: Subst, x: String): Option[Effect] = {
+    pub def appEVarOpt(subst: Subst, x: EVar): Option[Effect] = {
         let Subst(_, _, eMap) = subst;
         Map.get(x, eMap)
     }
