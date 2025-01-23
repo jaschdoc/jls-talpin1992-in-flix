@@ -7,8 +7,52 @@ instance ToString[Subst] {
 }
 
 trait SubstApp[t] {
-    pub def app(s: Subst, x: t): t
+    type Out: Type
+    pub def app(s: Subst, x: t): SubstApp.Out[t]
 }
+
+instance SubstApp[TVar] {
+    type Out = Type
+    pub def app(s: Subst, x: TVar): Type = Subst.appTVar(s, x)
+}
+
+instance SubstApp[RVar] {
+    type Out = Reg
+    pub def app(s: Subst, x: RVar): Reg = Subst.appRVar(s, x)
+}
+
+instance SubstApp[EVar] {
+    type Out = Effect
+    pub def app(s: Subst, x: EVar): Effect = Subst.appEVar(s, x)
+}
+
+instance SubstApp[Reg] {
+    type Out = Reg
+    pub def app(s: Subst, x: Reg): Reg = Subst.appReg(s, x)
+}
+
+instance SubstApp[Type] {
+    type Out = Type
+    pub def app(s: Subst, x: Type): Type = Subst.appType(s, x)
+}
+
+instance SubstApp[Effect] {
+    type Out = Effect
+    pub def app(s: Subst, x: Effect): Effect = Subst.appEffect(s, x)
+}
+
+instance SubstApp[Constraint] {
+    type Out = Constraint
+    pub def app(s: Subst, x: Constraint): Constraint = Subst.appConstraint(s, x)
+}
+
+instance SubstApp[Map[k: Type, v: Type]] with SubstApp[v] {
+    type Out = Map[k, SubstApp.Out[v]]
+    pub def app(s: Subst, x: Map[k, v]): Map[k, SubstApp.Out[v]] = {
+        Map.map(SubstApp.app(s), x)
+    }
+}
+
 
 mod Subst {
     use Option.getWithDefault
@@ -22,6 +66,7 @@ mod Subst {
     use Talpin.Data.TVar
     use Talpin.Data.RVar
     use Talpin.Data.EVar
+    use Talpin.Data.SubstApp.app
 
     pub def empty(): Subst =
         Subst(Map.empty(), Map.empty(), Map.empty())
@@ -75,14 +120,9 @@ mod Subst {
         Subst(tMap |> Map.remove(x), rMap, eMap)
     }
 
-    pub def appTVar(subst: Subst, x: TVar): Type \ KeyNotFound = {
+    pub def appTVar(subst: Subst, x: TVar): Type = {
         let Subst(tMap, _, _) = subst;
-        tMap[x]
-    }
-
-    pub def appTVarOpt(subst: Subst, x: TVar): Option[Type] = {
-        let Subst(tMap, _, _) = subst;
-        Map.get(x, tMap)
+        Map.get(x, tMap) |> Option.getWithDefault(Type.Var(x))
     }
 
     pub def bindRVar(x: RVar, p: Reg, subst: Subst): Subst = {
@@ -98,14 +138,9 @@ mod Subst {
         Subst(tMap, rMap |> Map.remove(x), eMap)
     }
 
-    pub def appRVar(subst: Subst, x: RVar): Reg \ KeyNotFound = {
+    pub def appRVar(subst: Subst, x: RVar): Reg = {
         let Subst(_, rMap, _) = subst;
-        rMap[x]
-    }
-
-    pub def appRVarOpt(subst: Subst, x: RVar): Option[Reg] = {
-        let Subst(_, rMap, _) = subst;
-        Map.get(x, rMap)
+        Map.get(x, rMap) |> Option.getWithDefault(Reg.RegVar(x))
     }
 
     pub def bindEVar(x: EVar, ef: Effect, subst: Subst): Subst = {
@@ -121,21 +156,21 @@ mod Subst {
         Subst(tMap, rMap, eMap |> Map.remove(x))
     }
 
-    pub def appEVar(subst: Subst, x: EVar): Effect \ KeyNotFound = {
+    pub def appEVar(subst: Subst, x: EVar): Effect = {
         let Subst(_, _, eMap) = subst;
-        eMap[x]
+        Map.get(x, eMap) |> Option.getWithDefault(Effect.Var(x))
     }
 
-    pub def appEVarOpt(subst: Subst, x: EVar): Option[Effect] = {
+    pub def appEVarDirect(subst: Subst, x: EVar): Option[Effect] = {
         let Subst(_, _, eMap) = subst;
         Map.get(x, eMap)
     }
 
     pub def appType(subst: Subst, tpe: Type): Type = match tpe {
         case Type.Unitt => Type.Unitt
-        case Type.Var(x) => appTVarOpt(subst, x) |> getWithDefault(tpe)
-        case Type.Ref(p, t) => Type.Ref(appReg(subst, p), appType(subst, t))
-        case Type.Arrow(t, ef, t1) => Type.Arrow(appType(subst, t), appEffect(subst, ef), appType(subst, t1))
+        case Type.Var(x) => app(subst, x)
+        case Type.Ref(p, t) => Type.Ref(app(subst, p), app(subst, t))
+        case Type.Arrow(t, ef, t1) => Type.Arrow(app(subst, t), app(subst, ef), app(subst, t1))
 
         case Type.Bool => Type.Bool
         case Type.Int => Type.Int
@@ -143,16 +178,16 @@ mod Subst {
 
     pub def appReg(subst: Subst, p: Reg): Reg = match p {
         case Reg.RegConst(_) => p
-        case Reg.RegVar(x) => appRVarOpt(subst, x) |> getWithDefault(p)
+        case Reg.RegVar(x) => app(subst, x)
     }
 
     pub def appEffect(subst: Subst, effect: Effect): Effect = match effect {
         case Effect.Empty => Effect.Empty
-        case Effect.Init(p) => Effect.Init(appReg(subst, p))
-        case Effect.Read(p) => Effect.Read(appReg(subst, p))
-        case Effect.Write(p) => Effect.Write(appReg(subst, p))
-        case Effect.Union(ef, ef1) => appEffect(subst, ef) + appEffect(subst, ef1)
-        case Effect.Var(x) => appEVarOpt(subst, x) |> getWithDefault(effect)
+        case Effect.Init(p) => Effect.Init(app(subst, p))
+        case Effect.Read(p) => Effect.Read(app(subst, p))
+        case Effect.Write(p) => Effect.Write(app(subst, p))
+        case Effect.Union(ef, ef1) => app(subst, ef) + app(subst, ef1)
+        case Effect.Var(x) => app(subst, x)
 
         case Effect.Eff(_) => effect
     }
@@ -166,17 +201,16 @@ mod Subst {
         tVars |> Set.forEach(x -> acc |> Ref.transform(unbindTVar(x)));
         rVars |> Set.forEach(x -> acc |> Ref.transform(unbindRVar(x)));
         eVars |> Set.forEach(x -> acc |> Ref.transform(unbindEVar(x)));
-        let t1 = appType(Ref.get(acc), t);
-        let k1 = appConstraint(Ref.get(acc), k);
+        let t1 = app(Ref.get(acc), t);
+        let k1 = app(Ref.get(acc), k);
         {tpe = t1, k = k1 | scheme}
     }
 
     pub def appConstraint(subst: Subst, k: Constraint): Constraint = {
         k |> coerce |> Set.map(match (x, ef) -> {
-            match appEVarOpt(subst)(x) {
-                case None => (x, appEffect(subst)(ef))
-                case Some(Effect.Var(x1)) => (x1, appEffect(subst)(ef))
-                case Some(other) => bug!(other |> ToString.toString) // paper says it should only be inferred variables, so unreachable
+            match app(subst, x) {
+                case Effect.Var(x1) => (x1, appEffect(subst)(ef))
+                case other => bug!(other |> ToString.toString) // paper says it should only be inferred variables, so unreachable
             }
         }) |> Constraint.Constraint
     }
