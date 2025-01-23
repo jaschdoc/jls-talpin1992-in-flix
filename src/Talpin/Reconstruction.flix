@@ -138,7 +138,6 @@ mod Talpin.Reconstruction {
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
             (compose(inner = s, s1), t1, appEffect(s1)(ef) + ef1, appConstraint(s1)(k) + k1)
         } else if (not expansive(e)) {
-            // TODO: add gen
             let vs = Type.fv(t) + Constraint.fv(k) - TyEnv.fv(tEnv);
             let scheme = TyScheme.genType(t, k, vs);
             BinderTypes.typed(x, scheme);
@@ -158,7 +157,7 @@ mod Talpin.Reconstruction {
         let (s, t, ef, k) = recon(tEnv |> TyEnv.unbind(x) |> TyEnv.bindType(x, a), e);
         let zName = "e${FreshName.get()}";
         let z = Effect.Var(zName);
-        (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + constraint(upperBound = zName, ef))
+        (s, Type.Arrow(appType(s)(a), z, t), Effect.Empty, k + dbg!!(constraint(upperBound = zName, ef)))
     }
 
     def reconRec(tEnv: TyEnv, f: String, x: String, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -177,7 +176,7 @@ mod Talpin.Reconstruction {
             case Some(other) => bug!(other |> toString)
         };
         // PAPER ERROR: effect should be the variable, not the effect
-        (comp, appType(comp)(Type.Arrow(a, z, a1)), Effect.Empty, appConstraint(s1)(k + constraint(upperBound = zSubst, ef)))
+        (comp, appType(comp)(Type.Arrow(a, z, a1)), Effect.Empty, appConstraint(s1)(k + dbg!!(constraint(upperBound = zSubst, ef))))
     }
 
 

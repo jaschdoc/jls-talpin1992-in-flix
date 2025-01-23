@@ -7,7 +7,9 @@ mod Talpin.EffectSolver {
     pub def solv(k: Constraint): Subst = {
         let lhss = k |> coerce |> Set.map(match (z, _) -> z);
         let unique = Set.size(lhss) == Set.size(coerce(k));
-        if (unique) min(k) else ?notUnique
+        if (unique) min(k) else {
+            bug!(coerce(k) |> ToString.toString)
+        }
     }
 
     pub def solvFull(p: (Subst, Type, Effect, Constraint)): (Subst, Type, Effect) = {
