@@ -151,12 +151,12 @@ mod Talpin.Parsing.FlixParser {
 
     /// ALWAYS CONSUMES
     def parseName(sc: StringCursor[r]): String \ r + Abort = {
-        def loop(i) = {
+        def loop(first, i) = {
             let c = nthChar(i, sc);
-            if (Char.isLetter(c) or c == '_') loop(i+1)
+            if (Char.isLetter(c) or c == '_' or (not first#first and Char.isDigit(c))) loop(first = false, i+1)
             else i
         };
-        let chars = loop(0);
+        let chars = loop(first = true, 0);
         if (chars == 0) err("letter", "parseName", sc)
         else take(chars, sc)
     }
