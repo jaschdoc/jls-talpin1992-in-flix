@@ -46,13 +46,11 @@ instance SubstApp[Constraint] {
     pub def app(s: Subst, x: Constraint): Constraint = Subst.appConstraint(s, x)
 }
 
-instance SubstApp[Map[k: Type, v: Type]] with SubstApp[v] {
+instance SubstApp[Map[k, v]] with SubstApp[v] {
     type Out = Map[k, SubstApp.Out[v]]
-    pub def app(s: Subst, x: Map[k, v]): Map[k, SubstApp.Out[v]] = {
+    pub def app(s: Subst, x: Map[k, v]): Map[k, SubstApp.Out[v]] =
         Map.map(SubstApp.app(s), x)
-    }
 }
-
 
 mod Subst {
     use Option.getWithDefault
