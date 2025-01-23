@@ -15,10 +15,11 @@ mod Util.Util {
         }
 
     pub def runAll(f: Unit -> t \ ef): t \ ef - Abort - KeyNotFound - Talpin.FreshName - Talpin.Reconstruction.BinderTypes + IO =
-        run f() with Talpin.FreshName.runWithState with Talpin.Reconstruction.BinderTypes.runWithNothing with keyNotFoundRunWithAbort with abortRunWithCrash
-
-    pub def handleAll(f: a -> b \ ef): a -> b \ ef - Abort - KeyNotFound - Talpin.FreshName - Talpin.Reconstruction.BinderTypes + IO =
-        x -> runAll(() -> f(x))
+        run f()
+        with Talpin.FreshName.runWithState
+        with Talpin.Reconstruction.BinderTypes.runWithNothing
+        with keyNotFoundRunWithAbort
+        with abortRunWithCrash
 
     pub def init(f: Unit -> t \ ef, n: Int32): List[t] \ ef = {
         def loop(count, acc) = {

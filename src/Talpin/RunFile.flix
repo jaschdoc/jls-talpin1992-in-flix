@@ -5,20 +5,21 @@ mod Talpin.RunFile {
     use Talpin.Data.Subst
     use Util.Util
 
-    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} = run {
-        match Environment.getArgs() {
-            case path :: Nil => checkFile(path)
-            case _ => println("expects one path argument")
+    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} =
+        run {
+            match Environment.getArgs() {
+                case path :: Nil => checkFile(path)
+                case _ => println("expects one path argument")
+            }
         }
-    } with Environment.runWithIO with Util.fileReadRunWithAbort with Abort.runWithResult
+        with Environment.runWithIO
+        with Util.fileReadRunWithAbort
+        with Abort.runWithResult
 
     pub def checkFile(path: String): Unit \ IO =
-        run {
-            match FileRead.handle(checkFileEff)(path) {
-                case Ok() => ()
-                case Err(_err) => println("IO Error")
-            }
-        } with handler Abort {
+        run checkFileEff(path)
+        with Util.fileReadRunWithAbort
+        with handler Abort {
             def abort(m, _k) = println(m)
         }
 

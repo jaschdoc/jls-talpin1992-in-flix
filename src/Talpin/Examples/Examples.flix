@@ -13,7 +13,6 @@ mod Talpin.Examples {
     use Talpin.FreshName
     use Talpin.Parsing.Parser.parse
     use Talpin.Reconstruction.reconstruct
-    use Util.Util.handleAll
     use Util.Util.runAll
 
     pub def exp01(): Exp \ IO = runAll(() -> parse(" ( (  lambda  (  x  )  (  new   x  )  )  (  lambda ( q )  q ) ) "))
