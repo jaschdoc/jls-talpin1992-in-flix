@@ -51,7 +51,7 @@ mod Talpin.Reconstruction {
     }
 
     pub def reconstructInfo(exp: Exp): Info \ {Abort, KeyNotFound} = {
-        let ((s, t, ef, k), binders) = Util.runWith(() -> Reconstruction.reconstruct(exp), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList);
+        let ((s, t, ef, k), binders) = run Reconstruction.reconstruct(exp) with FreshName.runWithState with Reconstruction.BinderTypes.runWithList;
         let s1 = EffectSolver.solv(k);
         let finalSubst = Subst.compose(inner = s, s1);
         {
@@ -79,14 +79,20 @@ mod Talpin.Reconstruction {
         use Talpin.Data.TyScheme
 
         pub def handleWithNothing(f: a -> b \ ef): a -> b \ ef - BinderTypes =
-            x -> run f(x) with BinderTypes { def typed(_x, _t, k) = k() }
+            x -> runWithNothing(() -> f(x))
+
+        pub def runWithNothing(f: Unit -> b \ ef): b \ ef - BinderTypes =
+            run f() with handler BinderTypes { def typed(_x, _t, k) = k() }
 
         pub def handleWithList(f: a -> b \ ef): a -> (b, Vector[(String, TyScheme)]) \ ef - BinderTypes =
-            x -> region local {
+            x -> runWithList(() -> f(x))
+
+        pub def runWithList(f: Unit -> b \ ef): (b, Vector[(String, TyScheme)]) \ ef - BinderTypes =
+            region local {
                 let types = MutList.empty(local);
                 run {
-                    (f(x), MutList.toVector(types))
-                } with BinderTypes {
+                    (f(), MutList.toVector(types))
+                } with handler BinderTypes {
                     def typed(x, t, k) = {
                         MutList.push((x, t), types);
                         k()
@@ -173,7 +179,7 @@ mod Talpin.Reconstruction {
             case Some(other) => bug!(other |> toString)
         };
         // PAPER ERROR: effect should be the variable, not the effect
-        (comp, appType(comp)(Type.Arrow(a, z, a1)), Effect.Empty, appConstraint(s1)(k + dbg!!(constraint(upperBound = zSubst, ef))))
+        (comp, appType(comp)(Type.Arrow(a, z, a1)), Effect.Empty, appConstraint(s1)(k + constraint(upperBound = zSubst, ef)))
     }
 
 

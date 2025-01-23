@@ -5,12 +5,12 @@ mod Talpin.RunFile {
     use Talpin.Data.Subst
     use Util.Util
 
-    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} = Util.runWith(() -> {
+    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} = run {
         match Environment.getArgs() {
             case path :: Nil => checkFile(path)
             case _ => println("expects one path argument")
         }
-    }, Environment.handle >> Util.fileReadHandleWithAbort >> Abort.handle)
+    } with Environment.runWithIO with Util.fileReadRunWithAbort with Abort.runWithResult
 
     pub def checkFile(path: String): Unit \ IO =
         run {
@@ -18,7 +18,7 @@ mod Talpin.RunFile {
                 case Ok() => ()
                 case Err(_err) => println("IO Error")
             }
-        } with Abort {
+        } with handler Abort {
             def abort(m, _k) = println(m)
         }
 
@@ -27,14 +27,16 @@ mod Talpin.RunFile {
             let input = FileRead.read(path);
             let p =
                 run Talpin.Parsing.Parser.parse(input)
-                with Abort {
+                with handler Abort {
                     def abort(m, _k) = Abort.abort("Parsing Error: ${m}")
                 };
             let ((s, t, ef, k), _binders) =
-                run Util.runWith(() -> Reconstruction.reconstruct(p), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList)
-                with Abort {
+                run Reconstruction.reconstruct(p)
+                with FreshName.runWithState
+                with Reconstruction.BinderTypes.runWithList
+                with handler Abort {
                     def abort(m, _k) = Abort.abort("Typer Error: ${m}")
-                } with KeyNotFound {
+                } with handler KeyNotFound {
                     def keyNotFound(msg, _k) = Abort.abort("Typer Error: ${msg}")
                 };
             let s1 = EffectSolver.solv(k);

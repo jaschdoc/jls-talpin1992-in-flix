@@ -10,11 +10,11 @@ mod Talpin.Repl {
     use Talpin.Data.Effect
     use Util.Util
 
-    pub def main(): Unit \ IO + Net = App.runAll(() -> {
+    pub def main(): Unit \ IO = run {
         println("-- REPL READY (':exit' to exit) --");
         println("Write a single line expression and I will type it");
         loop()
-    })
+    } with Console.runWithIO
 
     def loop(): Unit \ IO + Console = {
         let input = Console.readln();
@@ -31,7 +31,7 @@ mod Talpin.Repl {
             let p = Parser.parse(input);
             println("-----------: ----------------------------------");
             println("        Exp: ${p}");
-            let ((s, t, ef, k), binders) = Util.runWith(() -> Reconstruction.reconstruct(p), FreshName.handleWithState >> Reconstruction.BinderTypes.handleWithList);
+            let ((s, t, ef, k), binders) = run Reconstruction.reconstruct(p) with FreshName.runWithState with Reconstruction.BinderTypes.runWithList;
             let s1 = EffectSolver.solv(k);
             let finalSubst = Subst.compose(inner = s, s1);
             println("       Type: ${Subst.appType(s1)(t)}");
@@ -40,9 +40,9 @@ mod Talpin.Repl {
             println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
             println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
             println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appTyScheme(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
-        } with Abort {
+        } with handler Abort {
             def abort(msg, _k) = println("Err: ${msg}")
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(msg, _k) = println("Err: ${msg}")
         }
     }
