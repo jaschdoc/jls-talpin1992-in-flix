@@ -8,7 +8,7 @@ mod Talpin.Reconstruction {
     use Talpin.Data.Reg
     use Talpin.Data.Subst
     use Talpin.Data.SubstApp.app
-    use Talpin.Data.Subst.{appTyScheme, bindTVarAll, bindRVarAll, bindEVarAll, compose}
+    use Talpin.Data.Subst.{bindTVarAll, bindRVarAll, bindEVarAll, compose}
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
     use Talpin.Data.TyScheme
@@ -52,7 +52,7 @@ mod Talpin.Reconstruction {
     //     println("Constraints: ${k}");
     //     println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
     //     println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-    //     println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${appTyScheme(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
+    //     println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${app(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
 
         }
     }
@@ -66,7 +66,7 @@ mod Talpin.Reconstruction {
             tpe = app(s1)(t),
             effect = app(s1)(ef),
             constraints = k,
-            binders = binders |> Vector.map(match (x, xt) -> (x, appTyScheme(finalSubst)(xt))),
+            binders = binders |> Vector.map(match (x, xt) -> (x, app(finalSubst)(xt))),
 
             preEffTpe = t,
             preEffEffect = ef,
@@ -135,7 +135,7 @@ mod Talpin.Reconstruction {
     }
 
     def reconVar(tEnv: TyEnv, x: String): (Subst, Type, Effect, Constraint) \ {FreshName, KeyNotFound} = {
-        let {tVars = tVars0, rVars = rVars0, eVars = eVars0, tpe = t, k} = tEnv[x];
+        let {tVars = tVars0, rVars = rVars0, eVars = eVars0, tpe = t, k} = coerce(tEnv[x]);
         let tVars = tVars0 |> toList |> map(tx -> (tx, Type.Var(freshTVar())));
         let rVars = rVars0 |> toList |> map(tx -> (tx, Reg.RegVar(freshRVar())));
         let eVars = eVars0 |> toList |> map(tx -> (tx, Effect.Var(freshEVar())));

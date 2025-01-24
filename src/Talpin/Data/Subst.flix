@@ -46,6 +46,11 @@ instance SubstApp[Constraint] {
     pub def app(s: Subst, x: Constraint): Constraint = Subst.appConstraint(s, x)
 }
 
+instance SubstApp[TyScheme] {
+    type Out = TyScheme
+    pub def app(s: Subst, x: TyScheme): TyScheme = Subst.appTyScheme(s, x)
+}
+
 instance SubstApp[Map[k, v]] with SubstApp[v] {
     type Out = Map[k, SubstApp.Out[v]]
     pub def app(s: Subst, x: Map[k, v]): Map[k, SubstApp.Out[v]] =
@@ -194,14 +199,14 @@ mod Subst {
         TyEnv.map(appTyScheme(subst), env)
 
     pub def appTyScheme(subst: Subst, scheme: TyScheme): TyScheme = region local {
-        let {tVars, rVars, eVars, tpe = t, k} = scheme;
+        let {tVars, rVars, eVars, tpe = t, k} = coerce(scheme);
         let acc = Ref.fresh(local, subst);
         tVars |> Set.forEach(x -> acc |> Ref.transform(unbindTVar(x)));
         rVars |> Set.forEach(x -> acc |> Ref.transform(unbindRVar(x)));
         eVars |> Set.forEach(x -> acc |> Ref.transform(unbindEVar(x)));
         let t1 = app(Ref.get(acc), t);
         let k1 = app(Ref.get(acc), k);
-        {tpe = t1, k = k1 | scheme}
+        TyScheme.TyScheme({tpe = t1, k = k1 | coerce(scheme)})
     }
 
     pub def appConstraint(subst: Subst, k: Constraint): Constraint = {
