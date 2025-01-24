@@ -8,7 +8,8 @@ mod Talpin.Reconstruction {
     use Talpin.Data.Reg
     use Talpin.Data.Subst
     use Talpin.Data.SubstApp.app
-    use Talpin.Data.Subst.{bindTVarAll, bindRVarAll, bindEVarAll, compose}
+    use Talpin.Data.SubstBind.bindAll
+    use Talpin.Data.Subst.compose
     use Talpin.Data.TyEnv
     use Talpin.Data.Type
     use Talpin.Data.TyScheme
@@ -139,7 +140,7 @@ mod Talpin.Reconstruction {
         let tVars = tVars0 |> toList |> map(tx -> (tx, Type.Var(freshTVar())));
         let rVars = rVars0 |> toList |> map(tx -> (tx, Reg.RegVar(freshRVar())));
         let eVars = eVars0 |> toList |> map(tx -> (tx, Effect.Var(freshEVar())));
-        let s = Subst.empty() |> bindTVarAll(tVars) |> bindRVarAll(rVars) |> bindEVarAll(eVars);
+        let s = Subst.empty() |> bindAll(tVars) |> bindAll(rVars) |> bindAll(eVars);
         (Subst.id(), app(s)(t), Effect.Empty, app(s)(k))
     }
 
