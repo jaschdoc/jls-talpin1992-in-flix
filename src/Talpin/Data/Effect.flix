@@ -79,6 +79,17 @@ mod Effect {
         union(seen)
     }
 
+    pub def remove(toRemove: {toRemove = Effect}, effect: Effect): Effect = match effect {
+        case Empty => Empty
+        case Init(p) => if (toRemove#toRemove == Init(p)) Empty else Init(p)
+        case Read(p) => if (toRemove#toRemove == Read(p)) Empty else Read(p)
+        case Write(p) => if (toRemove#toRemove == Write(p)) Empty else Write(p)
+        case Union(ef, ef1) => Union(remove(toRemove, ef), remove(toRemove, ef1))
+        case Var(x) => if (toRemove#toRemove == Var(x)) Empty else Var(x)
+
+        case Eff(s) => if (toRemove#toRemove == Eff(s)) Empty else Eff(s)
+    }
+
 }
 
 }

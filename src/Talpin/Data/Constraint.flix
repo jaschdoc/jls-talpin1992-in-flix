@@ -1,12 +1,6 @@
 mod Talpin.Data {
 
-pub enum Constraint(Set[(EVar, Effect)])
-
-instance Coerce[Constraint] {
-    type Out = Set[(EVar, Effect)]
-
-    pub def coerce(k: Constraint): Set[(EVar, Effect)] = Constraint.coerce(k)
-}
+pub enum Constraint(Set[(EVar, Effect)]) with Coerce
 
 instance ToString[Constraint] {
     pub def toString(k: Constraint): String = Constraint.toString(k)

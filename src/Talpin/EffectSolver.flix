@@ -4,18 +4,26 @@ mod Talpin.EffectSolver {
     use Talpin.Data.Effect
     use Talpin.Data.Subst
 
-    pub def solv(k: Constraint): Subst = {
-        let lhss = k |> coerce |> Set.map(match (z, _) -> z);
-        let unique = Set.size(lhss) == Set.size(coerce(k));
-        if (unique) min(k) else {
-            bug!(coerce(k) |> ToString.toString)
-        }
-    }
+    use Eq.eq
+
+    pub def solv(k: Constraint): Subst =
+        k |> collapse |> min
 
     pub def solvFull(p: (Subst, Type, Effect, Constraint)): (Subst, Type, Effect) = {
         let (s, t, ef, k) = p;
         let s1 = solv(k);
         (Subst.compose(inner = s, s1), Subst.appType(s1)(t), Subst.appEffect(s1)(ef))
+    }
+
+    def collapse(k: Constraint): Constraint = {
+        k |> coerce |> Set.toList |> List.groupBy(x -> y -> fst(x) == fst(y)) |> List.map(
+            group ->
+                match group {
+                    case Nil => ?unreachable
+                    case (evar, _) :: xs =>
+                        (evar, group |> List.map(snd) |> List.foldLeft(Effect.Union, Effect.Empty))
+                }
+        ) |> List.toSet |> Constraint.Constraint
     }
 
     def min(k: Constraint): Subst = {
@@ -24,7 +32,7 @@ mod Talpin.EffectSolver {
             case Some((z, ef)) =>
                 let k1 = Set.remove((z, ef), coerce(k)) |> Constraint.Constraint;
                 let my = min(k1);
-                Subst.compose(inner = my, Subst.singleEVar(z, Subst.appEffect(my)(ef)))
+                Subst.singleEVar(z, Subst.appEffect(my)(ef) |> Effect.remove(toRemove = Effect.Var(z))) |> Subst.compose(inner = my)
         }
     }
 
