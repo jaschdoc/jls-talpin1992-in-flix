@@ -119,7 +119,6 @@ mod Subst {
     pub def id(): Subst =
         empty()
 
-    // TODO: swap order
     pub def compose(inner: {inner = Subst}, outer: Subst): Subst = {
         if (isEmpty(inner#inner)) outer
         else if (isEmpty(outer)) inner#inner

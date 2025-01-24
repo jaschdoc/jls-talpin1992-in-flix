@@ -61,7 +61,7 @@ mod Talpin.Reconstruction {
     pub def reconstructInfo(exp: Exp): Info \ {Abort, KeyNotFound} = {
         let ((s, t, ef, k), binders) = run Reconstruction.reconstruct(exp) with FreshName.runWithState with Reconstruction.BinderTypes.runWithList;
         let s1 = EffectSolver.solv(k);
-        let finalSubst = Subst.compose(inner = s, s1);
+        let finalSubst = s1 |> compose(inner = s);
         {
             exp = exp,
             tpe = app(s1)(t),
@@ -153,12 +153,12 @@ mod Talpin.Reconstruction {
             BinderTypes.typed(x, scheme);
             let tEnv1 = app(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bind(x, scheme);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
-            (compose(inner = s, s1), t1, ef1, k1)
+            (s1 |> compose(inner = s), t1, ef1, k1)
         } else {
             BinderTypes.typed(x, TyScheme.fromType(t));
             let tEnv1 = app(s)(tEnv |> TyEnv.unbind(x)) |> TyEnv.bindType(x, t);
             let (s1, t1, ef1, k1) = recon(tEnv1, e1);
-            (compose(inner = s, s1), t1, app(s1)(ef) + ef1, app(s1)(k) + k1)
+            (s1 |> compose(inner = s), t1, app(s1)(ef) + ef1, app(s1)(k) + k1)
         }
     }
 
@@ -180,7 +180,7 @@ mod Talpin.Reconstruction {
         let tEnv1 = tEnv |> TyEnv.unbind(f) |> TyEnv.unbind(x) |> TyEnv.bindType(f, Type.Arrow(a, z, a1)) |> TyEnv.bindType(x, a);
         let (s, t, ef, k) = recon(tEnv1, e);
         let s1 = unify(app(s)(a1), t);
-        let comp = compose(inner = s, s1);
+        let comp = s1 |> compose(inner = s);
         let zSubst = match app(s, zName) {
             case Effect.Var(zName1) => zName1
             case other => bug!(other |> toString)
@@ -197,7 +197,7 @@ mod Talpin.Reconstruction {
         let z = Effect.Var(freshEVar());
         let s11 = unify(app(s1)(t), Type.Arrow(t1, z, a));
         let ef11 = app(s11)(app(s1)(ef) + ef1 + z);
-        (compose(inner = compose(inner = s, s1), s11), app(s11)(a), ef11, app(s11)(app(s1)(k) + k1))
+        (s11 |> compose(inner = s1 |> compose(inner = s)), app(s11)(a), ef11, app(s11)(app(s1)(k) + k1))
     }
 
     def reconNew(tEnv: TyEnv, e: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -211,7 +211,7 @@ mod Talpin.Reconstruction {
         let a = Type.Var(freshTVar());
         let r = Reg.RegVar(freshRVar());
         let s1 = unify(Type.Ref(r, a), t);
-        (compose(inner = s, s1), app(s1)(a), ef + Effect.Read(app(s1)(r)), app(s1)(k))
+        (s1 |> compose(inner = s), app(s1)(a), ef + Effect.Read(app(s1)(r)), app(s1)(k))
     }
 
     def reconSet(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -220,7 +220,7 @@ mod Talpin.Reconstruction {
         let r = Reg.RegVar(freshRVar());
         let s11 = unify(Type.Ref(r, t1), app(s1)(t));
         let ef11 = app(s11)(app(s1)(ef) + ef1 + Effect.Write(r));
-        (compose(inner = compose(inner = s, s1), s11), Type.Unitt, ef11, app(s11)(app(s1)(k) + k1))
+        (s11 |> compose(inner = s1 |> compose(inner = s)), Type.Unitt, ef11, app(s11)(app(s1)(k) + k1))
     }
 
     def reconIf(tEnv: TyEnv, e: Exp, e1: Exp, e11: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -229,11 +229,11 @@ mod Talpin.Reconstruction {
         let (s11, t1, ef1, k1) = recon(tEnv, e1);
         let (s111, t11, ef11, k11) = recon(tEnv, e11);
         let s1111 = unify(app(s111)(t1), t11);
-        let comp1And11 = compose(inner = s1, s11);
-        let comp111And1111 = compose(inner = s111, s1111);
-        let comp1Through1111 = compose(inner = comp1And11, comp111And1111);
+        let comp1And11 = s11 |> compose(inner = s1);
+        let comp111And1111 = s1111 |> compose(inner = s111);
+        let comp1Through1111 = comp111And1111 |> compose(inner = comp1And11);
         let ef111 = app(comp1Through1111)(ef) + app(comp111And1111)(ef1) + app(s1111)(ef11);
-        (compose(inner = s, comp1Through1111), app(s1111)(t11), ef111, app(comp1Through1111)(k) + app(comp111And1111)(k1) + app(s1111)(k11))
+        (comp1Through1111 |> compose(inner = s), app(s1111)(t11), ef111, app(comp1Through1111)(k) + app(comp111And1111)(k1) + app(s1111)(k11))
     }
 
     def reconIntOp(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -241,10 +241,10 @@ mod Talpin.Reconstruction {
         let (s1, t1, ef1, k1) = recon(tEnv, e1);
         let s11 = unify(app(s1)(t), Type.Int);
         let s111 = unify(app(s11)(t1), Type.Int);
-        let comp11And111 = compose(inner = s11, s111);
-        let comp1And11And111 = compose(inner = s1, comp11And111);
+        let comp11And111 = s111 |> compose(inner = s11);
+        let comp1And11And111 = comp11And111 |> compose(inner = s1);
         let ef11 = app(comp1And11And111)(ef) + app(comp11And111)(ef1);
-        (compose(inner = s, comp1And11And111), Type.Int, ef11, app(comp1And11And111)(k) + app(comp11And111)(k1))
+        (comp1And11And111 |> compose(inner = s), Type.Int, ef11, app(comp1And11And111)(k) + app(comp11And111)(k1))
     }
 
     def reconEq(tEnv: TyEnv, e: Exp, e1: Exp): (Subst, Type, Effect, Constraint) \ {Abort, BinderTypes, FreshName, KeyNotFound} = {
@@ -252,10 +252,10 @@ mod Talpin.Reconstruction {
         let (s1, t1, ef1, k1) = recon(tEnv, e1);
         let s11 = unify(app(s1)(t), Type.Int);
         let s111 = unify(app(s11)(t1), Type.Int);
-        let comp = compose(inner = s11, s111);
-        let comp1 = compose(inner = s1, comp);
+        let comp = s111 |> compose(inner = s11);
+        let comp1 = comp |> compose(inner = s1);
         let ef11 = app(comp1)(ef) + app(comp)(ef1);
-        (compose(inner = s, comp1), Type.Bool, ef11, app(comp1)(k) + app(comp)(k1))
+        (comp1 |> compose(inner = s), Type.Bool, ef11, app(comp1)(k) + app(comp)(k1))
     }
 
     def reconDo(_tEnv: TyEnv, ef: String): (Subst, Type, Effect, Constraint) =
@@ -278,13 +278,13 @@ mod Talpin.Reconstruction {
         case (Type.Arrow(ti, Effect.Var(z), tf), Type.Arrow(ti1, Effect.Var(z1), tf1)) =>
             let s = Subst.singleEVar(z, Effect.Var(z1));
             let s1 = unify(app(s)(ti), app(s)(ti1));
-            let comp = compose(inner = s, s1);
+            let comp = s1 |> compose(inner = s);
             let s11 = unify(app(comp)(tf), app(comp)(tf1));
-            compose(inner = comp, s11)
+            s11 |> compose(inner = comp)
         case (Type.Ref(Reg.RegVar(r), t), Type.Ref(Reg.RegVar(r1), t1)) =>
             let s = Subst.singleRVar(r, Reg.RegVar(r1));
             let s1 = unify(app(s)(t), app(s)(t1));
-            compose(inner = s, s1)
+            s1 |> compose(inner = s)
 
         case (Type.Bool, Type.Bool) => Subst.id()
         case (Type.Int, Type.Int) => Subst.id()
