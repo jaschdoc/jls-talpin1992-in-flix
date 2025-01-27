@@ -34,27 +34,63 @@ mod Talpin.Reconstruction {
         exp = Exp,
         tpe = Type,
         effect = Effect,
-        constraints = Constraint,
         binders = Vector[(String, TyScheme)],
         preEffTpe = Type,
         preEffEffect = Effect,
+        constraints = Constraint,
         preEffSubst = Subst,
-        solvedConstraints = Constraint,
-        subst = Subst
+        preEffBinders = Vector[(String, TyScheme)],
+        solvedSubst = Subst
     }
 
     mod Info {
-        pub def toString(i: Info): String = region local {
-            let {exp = _exp, tpe = _tpe, effect = _effect, constraints = _constraints, binders = _binders, preEffTpe = _preEffTpe, preEffEffect = _preEffEffect, preEffSubst = _preEffSubst, solvedConstraints = _solvedConstraints, subst = _subst} = i;
-            let _l = MutList.empty(local);
-            "wip"
-    // println("       Type: ${}");
-    //     println("     Effect: ${}");
-    //     println("Constraints: ${k}");
-    //     println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-    //     println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-    //     println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${app(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
+        use Functor.map
+        use Talpin.Data.Constraint
+        use Talpin.Data.Subst
 
+        pub def toStrings(i: Info): List[String] = region local {
+            use ToString.toString;
+            let {
+                exp,
+                tpe,
+                effect,
+                binders,
+                preEffTpe,
+                preEffEffect,
+                constraints,
+                preEffSubst,
+                preEffBinders,
+                solvedSubst
+            } = i;
+            let l = MutList.empty(local);
+            def add(title, content, start, end) = l |> MutList.push(Some((title, content, start, end)));
+            def addOne(title, content) = l |> MutList.push(Some((title, List#{content}, "", "")));
+            def addEmpty() = l |> MutList.push(None);
+            addOne("Exp", exp |> toString);
+            addOne("Type", tpe |> toString);
+            addOne("Effect", effect |> toString);
+            add("Binders", binders |> map(match (x, sigma) -> "${x}: ${sigma}") |> Vector.toList, "{", "}");
+            addEmpty();
+            addOne("(PreEff) Tpe", preEffTpe |> toString);
+            addOne("(PreEff) Effect", preEffEffect |> toString);
+            add("(PreEff) Constraints", constraints |> Constraint.toStrings, "{", "}");
+            add("(PreEff) Subst", preEffSubst |> Subst.toStrings, "[", "]");
+            add("(PreEff) Binders", preEffBinders |> map(match (x, sigma) -> "${x}: ${sigma}") |> Vector.toList, "{", "}");
+            addEmpty();
+            add("(Solved) Subst", solvedSubst |> Subst.toStrings, "[", "]");
+
+            let maxFirst = l |> MutList.map(local, Option.map(match (x, _, _, _) -> String.length(x)) >> Option.getWithDefault(0)) |> MutList.maximum |> Option.getWithDefault(0);
+            let indent = String.repeat(maxFirst+6, " ");
+            l |> MutList.toList |> List.flatMap(line -> match line {
+                case None => List#{""}
+                case Some((title, content, start, end)) =>
+                    let paddedTitle = String.padRight(maxFirst+2, '.', title);
+                    match content {
+                        case Nil => List#{"${paddedTitle}: ${start}${end}"}
+                        case one :: Nil => List#{"${paddedTitle}: ${start}${one}${end}"}
+                        case many => "${paddedTitle}: ${start}" :: map(String.concat(indent), many) ::: List#{String.concat(String.padLeft(maxFirst+2, ' ', ""), "  ${end}")}
+                    }
+            })
         }
     }
 
@@ -64,17 +100,17 @@ mod Talpin.Reconstruction {
         let finalSubst = s1 |> compose(inner = s);
         {
             exp = exp,
-            tpe = app(s1)(t),
-            effect = app(s1)(ef),
-            constraints = k,
-            binders = binders |> Vector.map(match (x, xt) -> (x, app(finalSubst)(xt))),
+            tpe = app(s1)(t) |> Type.simplify,
+            effect = app(s1)(ef) |> Effect.simplify,
+            binders = binders |> Vector.map(match (x, xt) -> (x, app(finalSubst)(xt) |> TyScheme.simplify)),
 
             preEffTpe = t,
             preEffEffect = ef,
+            constraints = k,
             preEffSubst = s,
+            preEffBinders = binders |> Vector.map(match (x, xt) -> (x, app(s)(xt) |> TyScheme.simplify)),
 
-            solvedConstraints = app(s1, k),
-            subst = finalSubst
+            solvedSubst = finalSubst |> Subst.simplify
         }
     }
 

@@ -245,13 +245,22 @@ mod Subst {
         }) |> Constraint.Constraint
     }
 
-    pub def toString(subst: Subst): String = region local {
+    pub def toString(subst: Subst): String = {
+        let inner = toStrings(subst) |> List.join(", ");
+        "[${inner}]"
+    }
+
+    pub def toStrings(subst: Subst): List[String] = region local {
         let Subst(ts, rs, efs) = subst;
-        let tIt = ts |> Map.iterator(local) |> Iterator.map(match (x, t) -> "  ${x} -> ${t}");
-        let rIt = rs |> Map.iterator(local) |> Iterator.map(match (x, r) -> "  ${x} -> ${r}");
-        let eIt = efs |> Map.iterator(local) |> Iterator.map(match (x, ef) -> "  ${x} -> ${ef}");
-        let inner = (tIt `Iterator.append` rIt `Iterator.append` eIt) |> Iterator.join(",\n");
-        "[\n${inner}\n]"
+        let tIt = ts |> Map.iterator(local) |> Iterator.map(match (x, t) -> "${x} -> ${t}");
+        let rIt = rs |> Map.iterator(local) |> Iterator.map(match (x, r) -> "${x} -> ${r}");
+        let eIt = efs |> Map.iterator(local) |> Iterator.map(match (x, ef) -> "${x} -> ${ef}");
+        (tIt `Iterator.append` rIt `Iterator.append` eIt) |> Iterator.toList
+    }
+
+    pub def simplify(subst: Subst): Subst = {
+        let Subst(ts, rs, efs) = subst;
+        Subst(ts |> Map.map(Type.simplify), rs, efs |> Map.map(Effect.simplify))
     }
 
 }

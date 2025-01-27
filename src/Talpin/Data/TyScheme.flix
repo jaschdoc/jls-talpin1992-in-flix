@@ -8,6 +8,10 @@ pub enum TyScheme({
     k = Constraint
 }) with Coerce
 
+instance ToString[TyScheme] {
+    pub def toString(x: TyScheme): String = TyScheme.toString(x)
+}
+
 mod TyScheme {
     use Coerce.coerce
     use Talpin.Data.Type
@@ -46,8 +50,13 @@ mod TyScheme {
         else {
             let {tVars, rVars, eVars, tpe, k} = coerce(s);
             let vars = List.map(ToString.toString, Set.toList(tVars)) `List.append` List.map(ToString.toString, Set.toList(rVars)) `List.append` List.map(ToString.toString, Set.toList(eVars));
-            "∀${vars |> List.join(", ")}. ${tpe}   with ${k}"
+            "∀${vars |> List.join(", ")}.    ${tpe}    with ${k}"
         }
+    }
+
+    pub def simplify(s: TyScheme): TyScheme = {
+        let {tVars, rVars, eVars, tpe, k} = coerce(s);
+        TyScheme({tVars = tVars, rVars = rVars, eVars = eVars, tpe = tpe |> Type.simplify, k = k |> Constraint.simplify})
     }
 
 }

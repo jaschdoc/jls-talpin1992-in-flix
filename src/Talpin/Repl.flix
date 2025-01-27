@@ -13,6 +13,7 @@ mod Talpin.Repl {
     pub def main(): Unit \ IO = run {
         println("-- REPL READY (':exit' to exit) --");
         println("Write a single line expression and I will type it");
+        println("(Start with 'flix:' to use flix-ish syntax)");
         loop()
     } with Console.runWithIO
 
@@ -29,17 +30,8 @@ mod Talpin.Repl {
     def typeInput(input: String): Unit \ IO = {
         run {
             let p = Parser.parse(input);
-            println("-----------: ----------------------------------");
-            println("        Exp: ${p}");
-            let ((s, t, ef, k), binders) = run Reconstruction.reconstruct(p) with FreshName.runWithState with Reconstruction.BinderTypes.runWithList;
-            let s1 = EffectSolver.solv(k);
-            let finalSubst = Subst.compose(inner = s, s1);
-            println("       Type: ${Subst.appType(s1)(t)}");
-            println("     Effect: ${Subst.appEffect(s1)(ef)}");
-            println("Constraints: ${k}");
-            println("      Subst: ${s |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-            println("  PostSubst: ${finalSubst |> ToString.toString |> (str -> "\n" + str) |> String.indent(13)}");
-            println("    binders: ${binders |> Vector.map(match (x, xt) -> "${x}: ${Subst.appTyScheme(finalSubst)(xt) |> TyScheme.toString}") |> Vector.join(",\n") |> (str -> "\n${str}") |> String.indent(13)}")
+            let info = run Reconstruction.reconstructInfo(p) with FreshName.runWithState;
+            info |> Reconstruction.Info.toStrings |> List.forEach(println)
         } with handler Abort {
             def abort(msg, _k) = println("Err: ${msg}")
         } with handler KeyNotFound {
