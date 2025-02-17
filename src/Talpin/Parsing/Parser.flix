@@ -199,10 +199,10 @@ mod Talpin.Parsing.Parser {
     }
 
     def whiteSpace(sc: StringCursor[r]): Unit \ r =
-        dropWhile(Char.isWhiteSpace, sc)
+        dropWhile(Char.isWhitespace, sc)
 
     def whiteSpace!(rule: String, sc: StringCursor[r]): Unit \ r + Abort =
-        if (dropWhile!(Char.isWhiteSpace, sc)) ()
+        if (dropWhile!(Char.isWhitespace, sc)) ()
         else {
             err("whitespace", rule, sc)
         }
