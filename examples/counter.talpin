@@ -1,0 +1,9 @@
+flix:
+
+\init -> (
+    let count = new(init - 1);
+    \_unit -> (
+        set(count, get(count) + 1);
+        get(count)
+    )
+)
