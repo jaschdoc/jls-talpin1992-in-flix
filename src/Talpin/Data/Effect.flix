@@ -54,11 +54,11 @@ mod Effect {
     }
 
     pub def simplify(effect: Effect): Effect = region local {
-        let workList = MutQueue.empty(local);
-        MutQueue.enqueue(workList, effect);
+        let workList = MutPriorityQueue.empty(local);
+        MutPriorityQueue.enqueue(workList, effect);
 
         let seen = MutSet.empty(local);
-        def loop() = match MutQueue.dequeue(workList) {
+        def loop() = match MutPriorityQueue.dequeue(workList) {
             case Some(ef) =>
                 match ef {
                     case Empty => ()
@@ -66,8 +66,8 @@ mod Effect {
                     case Read(_) => seen |> MutSet.add(ef)
                     case Write(_) => seen |> MutSet.add(ef)
                     case Union(e, e1) =>
-                        MutQueue.enqueue(workList, e);
-                        MutQueue.enqueue(workList, e1)
+                        MutPriorityQueue.enqueue(workList, e);
+                        MutPriorityQueue.enqueue(workList, e1)
                     case Var(_) => seen |> MutSet.add(ef)
 
                     case Eff(_) => seen |> MutSet.add(ef)
