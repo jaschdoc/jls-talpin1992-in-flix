@@ -17,12 +17,10 @@ mod Talpin.EffectSolver {
 
     def collapse(k: Constraint): Constraint = {
         k |> coerce |> Set.toList |> List.groupBy(x -> y -> fst(x) == fst(y)) |> List.map(
-            group ->
-                match group {
-                    case Nil => ?unreachable
-                    case (evar, _) :: xs =>
-                        (evar, group |> List.map(snd) |> List.foldLeft(Effect.Union, Effect.Empty))
-                }
+            group -> {
+                let evar = fst(Nel.head(group));
+                (evar, group |> Nel.map(snd) |> Nel.foldLeft(Effect.Union, Effect.Empty))
+            }
         ) |> List.toSet |> Constraint.Constraint
     }
 
