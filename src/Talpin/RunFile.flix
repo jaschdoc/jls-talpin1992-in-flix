@@ -5,7 +5,7 @@ mod Talpin.RunFile {
     use Talpin.Data.Subst
     use Util.Util
 
-    pub def checkFileArg(): Result[String, Unit] \ {Sys, IO} =
+    pub def checkFileArg(): Result[String, Unit] \ IO =
         run {
             match Environment.getArgs() {
                 case path :: Nil => checkFile(path)
