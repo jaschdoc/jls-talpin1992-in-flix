@@ -7,12 +7,12 @@ mod Talpin.RunFile {
 
     pub def checkFileArg(): Result[String, Unit] \ IO =
         run {
-            match Environment.getArgs() {
+            match Env.getArgs() {
                 case path :: Nil => checkFile(path)
                 case _ => println("expects one path argument")
             }
         }
-        with Environment.runWithIO
+        with Env.runWithIO
         with Util.fileReadRunWithAbort
         with Abort.runWithResult
 
